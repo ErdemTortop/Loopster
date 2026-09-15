@@ -26,6 +26,8 @@ Tempo, metronom, kademeli hızlanma, loop, parçalar ve transpoze alt çubuktaki
   Bir ölçüye tıklamak imleci oraya götürür.
 - **Kademeli hızlanma:** "Her N turda hızı %X artır, %Y'ye ulaşınca bu hızda devam et." Tur ve anlık hız ekranda görünür.
 - **Parçalar:** her enstrümanı susturma ya da solo.
+- **Görünüm:** "Sadece tab" nota satırını gizler (davul gibi tabı olmayan partiler notayla kalır); nota büyüklüğü
+  %60–%200 arası ayarlanır. İkisi de hatırlanır.
 - **Transpoze:** yarım ses adımlarla, sadece ses kayar (tab aynı kalır). Kapo ya da düşük akort için.
 - **Notlar:** her parça için genel bir not ve loop aralıklarına bağlı notlar (ör. "33–40: 3. parmak kayıyor").
   Bir loop notuna tıklayınca o loop açılır. Notlar tarayıcıda, dosya içeriğine göre saklanır; dosyanın adı değişse de kaybolmaz.

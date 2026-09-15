@@ -1,6 +1,6 @@
 import type { ReactNode } from 'react'
-import { SPEED_MAX, SPEED_MIN, type Player } from '../player/useAlphaTab'
-import { Button, LedDot, NumberField, Readout, Section, Toggle } from './ui'
+import { SPEED_MAX, SPEED_MIN, ZOOM_MAX, ZOOM_MIN, ZOOM_STEP, type Player } from '../player/useAlphaTab'
+import { Button, NumberField, Readout, Section, Toggle } from './ui'
 
 const hintClass = 'text-sm text-muted'
 
@@ -15,7 +15,7 @@ interface Props {
  * the notation width stays the same, so alphaTab does not re-layout.
  */
 export function SettingsShelf({ player, disabled, onClose }: Props) {
-  const { info, speed, metronome, loop, trainer, round, transpose } = player
+  const { info, speed, metronome, loop, trainer, round, transpose, view } = player
 
   return (
     <section id="settings-shelf" aria-label="Ayarlar" className="relative z-40 border-t border-line bg-surface">
@@ -120,12 +120,37 @@ export function SettingsShelf({ player, disabled, onClose }: Props) {
         </Cell>
 
         <Cell>
-          <Section title="Loop">
-            <Button onClick={player.toggleLoop} aria-pressed={loop.enabled} className="w-full justify-start">
-              <LedDot on={loop.enabled} />
-              {loop.enabled ? `Açık · ${loop.start + 1}–${loop.end + 1}. ölçüler` : 'Kapalı'}
-            </Button>
-            <p className={hintClass}>Notada ölçüleri sürükle, zarfı kenarlarından ayarla.</p>
+          <Section title="Görünüm">
+            <div className="grid grid-cols-2 gap-2">
+              <Toggle on={!view.tabOnly} onClick={() => player.setTabOnly(false)}>
+                Nota + Tab
+              </Toggle>
+              <Toggle on={view.tabOnly} onClick={() => player.setTabOnly(true)}>
+                Sadece tab
+              </Toggle>
+            </div>
+            <div className="flex items-center gap-2">
+              <Button
+                onClick={() => player.changeZoom(-ZOOM_STEP)}
+                disabled={disabled || view.zoom <= ZOOM_MIN}
+                aria-label="Uzaklaştır"
+                className="w-12 text-xl"
+              >
+                −
+              </Button>
+              <Readout label="Büyüklük" className="flex-1 text-center">
+                %{view.zoom}
+              </Readout>
+              <Button
+                onClick={() => player.changeZoom(ZOOM_STEP)}
+                disabled={disabled || view.zoom >= ZOOM_MAX}
+                aria-label="Yakınlaştır"
+                className="w-12 text-xl"
+              >
+                +
+              </Button>
+            </div>
+            <p className={hintClass}>Tabı olmayan partiler (davul gibi) notayla gösterilmeye devam eder.</p>
           </Section>
         </Cell>
 

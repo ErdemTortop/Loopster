@@ -52,11 +52,59 @@ export const SUPPORTED_EXTENSIONS = ['.gp5', '.gp4', '.gp3', '.gpx', '.gp']
 export const SPEED_MIN = 25
 export const SPEED_MAX = 150
 export const TRANSPOSE_LIMIT = 12
+export const ZOOM_MIN = 60
+export const ZOOM_MAX = 200
+export const ZOOM_STEP = 10
+
+export interface ViewState {
+  tabOnly: boolean
+  /** Notation size in percent. */
+  zoom: number
+}
 
 const base = import.meta.env.BASE_URL
 const NO_LOOP: LoopState = { enabled: false, start: 0, end: 0 }
 
 export const clamp = (value: number, min: number, max: number) => Math.min(max, Math.max(min, value))
+
+type Staff = Track['staves'][number]
+
+const VIEW_KEY = 'loopster.view'
+
+function loadView(): ViewState {
+  try {
+    const saved = JSON.parse(localStorage.getItem(VIEW_KEY) ?? 'null') as Partial<ViewState> | null
+    return {
+      tabOnly: saved?.tabOnly === true,
+      zoom: typeof saved?.zoom === 'number' ? clamp(Math.round(saved.zoom), ZOOM_MIN, ZOOM_MAX) : 100,
+    }
+  } catch {
+    return { tabOnly: false, zoom: 100 }
+  }
+}
+
+// What the file itself asked to show, so turning "tab only" off restores it exactly.
+const originalVisibility = new WeakMap<Staff, { standard: boolean; tab: boolean }>()
+
+function applyStaffVisibility(score: Score, tabOnly: boolean) {
+  for (const track of score.tracks) {
+    for (const staff of track.staves) {
+      let original = originalVisibility.get(staff)
+      if (!original) {
+        original = { standard: staff.showStandardNotation, tab: staff.showTablature }
+        originalVisibility.set(staff, original)
+      }
+      // Only staves that have a tablature can drop the standard notation; drums and piano keep theirs.
+      if (tabOnly && staff.isStringed && !staff.isPercussion) {
+        staff.showStandardNotation = false
+        staff.showTablature = true
+      } else {
+        staff.showStandardNotation = original.standard
+        staff.showTablature = original.tab
+      }
+    }
+  }
+}
 
 function barAtTick(api: alphaTab.AlphaTabApi, trackIndex: number, tick: number): number | null {
   const result = api.tickCache?.findBeat(new Set([trackIndex]), tick)
@@ -104,11 +152,12 @@ export function useAlphaTab(
   const [mix, setMix] = useState<TrackMix[]>([])
   const [transpose, setTransposeState] = useState(0)
   const [songId, setSongId] = useState<string | null>(null)
+  const [view, setView] = useState<ViewState>(loadView)
 
   // alphaTab handlers are registered once, so they read current values from here.
-  const latest = useRef({ speed, loop, trainer, trackIndex, isPlaying })
+  const latest = useRef({ speed, loop, trainer, trackIndex, isPlaying, view })
   useEffect(() => {
-    latest.current = { speed, loop, trainer, trackIndex, isPlaying }
+    latest.current = { speed, loop, trainer, trackIndex, isPlaying, view }
   })
   const currentBarRef = useRef(0)
   const roundRef = useRef(0)
@@ -122,6 +171,7 @@ export function useAlphaTab(
     if (!container || !scroll) return
 
     const api = new alphaTab.AlphaTabApi(container, {
+      display: { scale: latest.current.view.zoom / 100 },
       core: {
         fontDirectory: `${base}font/`,
         enableLazyLoading: true,
@@ -150,6 +200,8 @@ export function useAlphaTab(
 
     const unsubscribers = [
       api.scoreLoaded.on((score: Score) => {
+        // scoreLoaded fires before alphaTab's first render, so the saved view costs no extra render.
+        applyStaffVisibility(score, latest.current.view.tabOnly)
         setInfo({
           title: score.title,
           artist: score.artist,
@@ -284,6 +336,29 @@ export function useAlphaTab(
     const pitched = score.tracks.filter((t) => !t.staves.some((s) => s.isPercussion))
     if (pitched.length > 0) api.changeTrackTranspositionPitch(pitched, transpose)
   }, [transpose, midiEpoch])
+
+  // Re-layout when the view changes; a newly loaded score already picks it up in scoreLoaded.
+  const appliedViewRef = useRef(view)
+  useEffect(() => {
+    try {
+      localStorage.setItem(VIEW_KEY, JSON.stringify(view))
+    } catch {
+      // Not remembered; fine.
+    }
+    const api = apiRef.current
+    const applied = appliedViewRef.current
+    appliedViewRef.current = view
+    if (!api?.score || (applied.tabOnly === view.tabOnly && applied.zoom === view.zoom)) return
+    applyStaffVisibility(api.score, view.tabOnly)
+    api.settings.display.scale = view.zoom / 100
+    api.updateSettings()
+    api.render()
+  }, [view])
+
+  const setTabOnly = useCallback((tabOnly: boolean) => setView((v) => ({ ...v, tabOnly })), [])
+  const changeZoom = useCallback((delta: number) => {
+    setView((v) => ({ ...v, zoom: clamp(v.zoom + delta, ZOOM_MIN, ZOOM_MAX) }))
+  }, [])
 
   const loadFile = useCallback(async (file: File) => {
     const api = apiRef.current
@@ -458,6 +533,9 @@ export function useAlphaTab(
     mix,
     transpose,
     songId,
+    view,
+    setTabOnly,
+    changeZoom,
     loadFile,
     selectTrack,
     playPause,
