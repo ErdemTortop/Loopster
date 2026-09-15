@@ -5,6 +5,15 @@ Zor bölümü loop'a al, yavaşlat, metronomla çal, hızı kademeli olarak art�
 
 > Proje geliştirme aşamasında.
 
+## Kullanım
+
+1. **Guitar Pro dosyası aç** kutusuna tıkla ya da dosyayı sayfanın herhangi bir yerine sürükle.
+2. Dosyada birden fazla enstrüman varsa üst çubuktaki **Parça** menüsünden seç.
+3. **Çal** ile başlat. Çalınan nota vurgulanır, sayfa kendiliğinden kayar.
+4. Başka bir dosyaya geçmek için **Dosya aç** düğmesini kullan.
+
+İlk çalmada ses dosyası (SoundFont, ~1,3 MB) yüklenir. Alt çubukta ilerlemesi görünür.
+
 ## Geliştirme
 
 Gereksinim: Node.js 20.19 veya üzeri.

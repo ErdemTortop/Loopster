@@ -14,3 +14,28 @@ html.light {
 body {
   margin: 0;
 }
+
+/* alphaTab draws black notation, so keep it on a light "paper" in both themes. */
+.score-paper {
+  background: #fdfcf8;
+  color: #111;
+}
+
+/* alphaTab adds these elements but ships no styles for them. */
+.at-cursor-bar {
+  background: rgb(245 158 11 / 0.18);
+}
+
+.at-cursor-beat {
+  background: rgb(217 119 6 / 0.85);
+  width: 3px;
+}
+
+.at-selection div {
+  background: rgb(59 130 246 / 0.15);
+}
+
+.at-highlight * {
+  fill: #d97706;
+  stroke: #d97706;
+}

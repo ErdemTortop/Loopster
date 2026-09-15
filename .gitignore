@@ -13,6 +13,9 @@ dist
 # Copied from node_modules by the alphaTab Vite plugin
 public/font
 public/soundfont
+
+# Local test files
+public/__test
 dist-ssr
 *.local
 
