@@ -1,0 +1,16 @@
+@import 'tailwindcss';
+
+/* Dark is the default; the light theme is opt-in via the `light` class on <html>. */
+@custom-variant light (&:where(.light, .light *));
+
+html {
+  color-scheme: dark;
+}
+
+html.light {
+  color-scheme: light;
+}
+
+body {
+  margin: 0;
+}
