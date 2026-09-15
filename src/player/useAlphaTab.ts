@@ -63,6 +63,16 @@ function barAtTick(api: alphaTab.AlphaTabApi, trackIndex: number, tick: number):
   return result ? result.masterBar.masterBar.index : null
 }
 
+async function fingerprint(data: Uint8Array<ArrayBuffer>): Promise<string> {
+  try {
+    const digest = await crypto.subtle.digest('SHA-256', data)
+    return [...new Uint8Array(digest).slice(0, 12)].map((b) => b.toString(16).padStart(2, '0')).join('')
+  } catch {
+    // crypto.subtle needs a secure context (https or localhost); fall back to something stable-ish.
+    return `size-${data.length}`
+  }
+}
+
 export function useAlphaTab(
   containerRef: RefObject<HTMLDivElement | null>,
   scrollRef: RefObject<HTMLDivElement | null>,
@@ -93,6 +103,7 @@ export function useAlphaTab(
   const [round, setRound] = useState(0)
   const [mix, setMix] = useState<TrackMix[]>([])
   const [transpose, setTransposeState] = useState(0)
+  const [songId, setSongId] = useState<string | null>(null)
 
   // alphaTab handlers are registered once, so they read current values from here.
   const latest = useRef({ speed, loop, trainer, trackIndex, isPlaying })
@@ -287,12 +298,16 @@ export function useAlphaTab(
 
     setError(null)
     setInfo(null)
+    setSongId(null)
     setStatus('loading')
     api.stop()
 
     try {
       const data = new Uint8Array(await file.arrayBuffer())
+      // Per-song data (notes) is keyed by file content, so a renamed copy keeps it.
+      setSongId(await fingerprint(data))
       if (!api.load(data, [0])) {
+        setSongId(null)
         setError(`"${file.name}" açılamadı. Dosya biçimi tanınmadı.`)
         setStatus('error')
       }
@@ -439,6 +454,7 @@ export function useAlphaTab(
     round,
     mix,
     transpose,
+    songId,
     loadFile,
     selectTrack,
     playPause,

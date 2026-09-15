@@ -24,6 +24,8 @@ Zor bölümü loop'a al, yavaşlat, metronomla çal, hızı kademeli olarak art�
 - **Kademeli hızlanma:** "Her N turda hızı %X artır, %Y'ye ulaşınca bu hızda devam et." Tur ve anlık hız ekranda görünür.
 - **Parçalar:** her enstrümanı susturma ya da solo.
 - **Transpoze:** yarım ses adımlarla, sadece ses kayar (tab aynı kalır). Kapo ya da düşük akort için.
+- **Notlar:** her parça için genel bir not ve loop aralıklarına bağlı notlar (ör. "33–40: 3. parmak kayıyor").
+  Bir loop notuna tıklayınca o loop açılır. Notlar tarayıcıda, dosya içeriğine göre saklanır; dosyanın adı değişse de kaybolmaz.
 - **Pomodoro:** odak / mola sayacı (varsayılan 25 / 5 dk). Odak bitince çalma durur, zil çalar ve mola başlar.
   Alt çubuktaki sayaca tıklayarak başlat / duraklat; süreler Ayarlar panelinde.
 

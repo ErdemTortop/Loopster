@@ -8,6 +8,7 @@ import { TransportBar } from './components/TransportBar'
 import { Button } from './components/ui'
 import { WelcomeScreen } from './components/WelcomeScreen'
 import { useAlphaTab, type Player } from './player/useAlphaTab'
+import { useNotes } from './player/useNotes'
 import { formatClock, usePomodoro } from './player/usePomodoro'
 import { useShortcuts } from './player/useShortcuts'
 
@@ -21,6 +22,7 @@ function App() {
   const scrollRef = useRef<HTMLDivElement>(null)
   const player = useAlphaTab(containerRef, scrollRef)
   const pomodoro = usePomodoro({ onWorkEnd: player.pause })
+  const notes = useNotes(player.songId)
 
   useEffect(() => {
     document.documentElement.classList.toggle('light', theme === 'light')
@@ -160,7 +162,13 @@ function App() {
             panelOpen ? 'translate-y-0 lg:translate-x-0' : 'translate-y-full lg:translate-x-full lg:translate-y-0'
           }`}
         >
-          <PracticePanel player={player} pomodoro={pomodoro} disabled={!hasScore} onClose={() => setPanelOpen(false)} />
+          <PracticePanel
+            player={player}
+            pomodoro={pomodoro}
+            notes={notes}
+            disabled={!hasScore}
+            onClose={() => setPanelOpen(false)}
+          />
         </aside>
       </div>
 

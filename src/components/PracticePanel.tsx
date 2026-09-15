@@ -1,5 +1,7 @@
 import { SPEED_MAX, SPEED_MIN, type Player } from '../player/useAlphaTab'
+import type { Notes } from '../player/useNotes'
 import { formatClock, type Pomodoro } from '../player/usePomodoro'
+import { NotesSection } from './NotesSection'
 import { Button, LedDot, NumberField, Readout, Section, Toggle } from './ui'
 
 const hintClass = 'text-sm text-muted'
@@ -7,11 +9,12 @@ const hintClass = 'text-sm text-muted'
 interface Props {
   player: Player
   pomodoro: Pomodoro
+  notes: Notes
   disabled: boolean
   onClose: () => void
 }
 
-export function PracticePanel({ player, pomodoro, disabled, onClose }: Props) {
+export function PracticePanel({ player, pomodoro, notes, disabled, onClose }: Props) {
   const { info, speed, metronome, loop, trainer, round, transpose } = player
 
   return (
@@ -61,6 +64,8 @@ export function PracticePanel({ player, pomodoro, disabled, onClose }: Props) {
 
         <fieldset disabled={disabled} className="min-w-0 divide-y divide-line">
           {disabled && <p className={`px-5 py-4 ${hintClass}`}>Diğer ayarlar bir dosya açınca etkinleşir.</p>}
+
+          <NotesSection player={player} notes={notes} />
 
           <Section title="Tempo">
             <div className="flex items-center gap-3">
