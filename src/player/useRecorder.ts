@@ -1,5 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { addRecording, deleteRecording, listRecordings, releaseUrl, type Recording } from './recordingsDb'
+import {
+  addRecording,
+  deleteRecording,
+  listRecordings,
+  releaseUrl,
+  type Recording,
+  type RecordingSync,
+} from './recordingsDb'
+import type { BeatEvent } from './useAlphaTab'
 
 export type RecorderState = 'idle' | 'requesting' | 'recording'
 
@@ -17,6 +25,36 @@ interface Options {
   /** Called when "play the tab too" is on. */
   onSyncStart: () => void
   onSyncStop: () => void
+  /** Audio-synced tab beats, used to capture timing for replaying the take with the tab. */
+  subscribeBeat: (listener: (beat: BeatEvent) => void) => () => void
+}
+
+/** Tab timing collected while a take is being recorded. */
+interface SyncCapture {
+  anchor: { atMs: number; tick: number; speed: number; round: number } | null
+  context: RecordingContext | null
+  lastAtMs: number
+  lastDurationMs: number
+  lastSpeed: number
+  count: number
+  speedChanges: RecordingSync['speedChanges']
+  lastSyncedBeat: number | null
+}
+
+/** A gap this many beats long between two tab beats means the tab was paused or stopped mid-take. */
+const GAP_FACTOR = 2.5
+
+function toSync(capture: SyncCapture): RecordingSync | undefined {
+  if (!capture.anchor || !capture.context) return undefined
+  return {
+    anchorMs: capture.anchor.atMs,
+    tick: capture.anchor.tick,
+    speed: capture.anchor.speed,
+    loopStart: capture.context.loopStart,
+    loopEnd: capture.context.loopEnd,
+    speedChanges: capture.speedChanges,
+    lastSyncedBeat: capture.lastSyncedBeat,
+  }
 }
 
 interface Session {
@@ -58,7 +96,7 @@ function micErrorMessage(error: unknown): string {
 }
 
 /** Records the microphone per song and keeps the takes in IndexedDB. */
-export function useRecorder({ songId, getContext, onSyncStart, onSyncStop }: Options) {
+export function useRecorder({ songId, getContext, onSyncStart, onSyncStop, subscribeBeat }: Options) {
   const supported = isSupported()
   const [state, setState] = useState<RecorderState>('idle')
   const [elapsedMs, setElapsedMs] = useState(0)
@@ -69,9 +107,9 @@ export function useRecorder({ songId, getContext, onSyncStart, onSyncStop }: Opt
   const sessionRef = useRef<Session | null>(null)
   const startedAtRef = useRef(0)
   const levelBufferRef = useRef<Float32Array<ArrayBuffer> | null>(null)
-  const latest = useRef({ getContext, onSyncStart, onSyncStop, syncPlayback })
+  const latest = useRef({ getContext, onSyncStart, onSyncStop, syncPlayback, subscribeBeat })
   useEffect(() => {
-    latest.current = { getContext, onSyncStart, onSyncStop, syncPlayback }
+    latest.current = { getContext, onSyncStart, onSyncStop, syncPlayback, subscribeBeat }
   })
 
   useEffect(() => {
@@ -131,11 +169,54 @@ export function useRecorder({ songId, getContext, onSyncStart, onSyncStop }: Opt
     }
 
     const mimeType = pickMimeType()
-    const recorder = new MediaRecorder(stream, mimeType ? { mimeType, audioBitsPerSecond: 128_000 } : undefined)
+    let recorder: MediaRecorder
+    try {
+      recorder = new MediaRecorder(stream, mimeType ? { mimeType, audioBitsPerSecond: 128_000 } : undefined)
+    } catch {
+      stream.getTracks().forEach((track) => track.stop())
+      setState('idle')
+      setError('Kayıt başlatılamadı; bu tarayıcı mikrofon kaydını bu biçimde yapamıyor.')
+      return
+    }
     const chunks: Blob[] = []
     recorder.ondataavailable = (event) => {
       if (event.data.size > 0) chunks.push(event.data)
     }
+
+    // Tab timing for playing the take back with the tab. It is measured against the same audio-synced
+    // beat events that drive the replay, so their delivery delay cancels out. Count-in clicks are skipped.
+    let audioStartedAt = 0
+    recorder.onstart = () => {
+      audioStartedAt = performance.now()
+    }
+    const capture: SyncCapture = {
+      anchor: null,
+      context: null,
+      lastAtMs: 0,
+      lastDurationMs: 0,
+      lastSpeed: 0,
+      count: 0,
+      speedChanges: [],
+      lastSyncedBeat: null,
+    }
+    const unsubscribeBeat = latest.current.subscribeBeat((beat) => {
+      if (beat.countIn || !audioStartedAt || capture.lastSyncedBeat !== null) return
+      const atMs = performance.now() - audioStartedAt
+      if (!capture.anchor) {
+        capture.anchor = { atMs, tick: beat.tick, speed: beat.speed, round: beat.round }
+        capture.context = latest.current.getContext()
+        capture.lastSpeed = beat.speed
+      } else if (atMs - capture.lastAtMs > GAP_FACTOR * capture.lastDurationMs) {
+        capture.lastSyncedBeat = capture.count - 1
+        return
+      } else if (beat.speed !== capture.lastSpeed) {
+        capture.speedChanges.push({ beat: capture.count, round: beat.round - capture.anchor.round, speed: beat.speed })
+        capture.lastSpeed = beat.speed
+      }
+      capture.lastAtMs = atMs
+      capture.lastDurationMs = beat.durationMs
+      capture.count += 1
+    })
 
     // The level meter is a nice-to-have; recording works without it.
     let audio: AudioContext | null = null
@@ -155,6 +236,7 @@ export function useRecorder({ songId, getContext, onSyncStart, onSyncStop }: Opt
     const context = latest.current.getContext()
     const takeSongId = songId
     recorder.onstop = async () => {
+      unsubscribeBeat()
       stream.getTracks().forEach((track) => track.stop())
       void audio?.close()
       const blob = new Blob(chunks, { type: recorder.mimeType || mimeType || 'audio/webm' })
@@ -170,6 +252,7 @@ export function useRecorder({ songId, getContext, onSyncStart, onSyncStop }: Opt
         mimeType: blob.type,
         blob,
         ...context,
+        sync: toSync(capture),
       }
       try {
         await addRecording(take)
@@ -179,9 +262,19 @@ export function useRecorder({ songId, getContext, onSyncStart, onSyncStop }: Opt
       }
     }
 
+    try {
+      recorder.start(1000)
+    } catch {
+      recorder.onstop = null
+      unsubscribeBeat()
+      stream.getTracks().forEach((track) => track.stop())
+      void audio?.close()
+      setState('idle')
+      setError('Kayıt başlatılamadı; mikrofon başka bir uygulama tarafından kullanılıyor ya da bağlantısı kesilmiş olabilir.')
+      return
+    }
     sessionRef.current = { recorder, stream, audio, analyser }
     startedAtRef.current = startedAt
-    recorder.start(1000)
     setElapsedMs(0)
     setState('recording')
     if (latest.current.syncPlayback) latest.current.onSyncStart()

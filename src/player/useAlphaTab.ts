@@ -78,6 +78,13 @@ export interface BeatEvent {
   /** Zero-based position within the bar. */
   index: number
   durationMs: number
+  /** Song tick of the click (count-in clicks use their own timeline). */
+  tick: number
+  /** True for the clicks of the count-in bar. */
+  countIn: boolean
+  /** Tempo percentage and loop round when the click was played. */
+  speed: number
+  round: number
 }
 
 const base = import.meta.env.BASE_URL
@@ -215,6 +222,7 @@ export function useAlphaTab(
   const [preRoll, setPreRollState] = useState(loadPreRoll)
   // Beats go straight to subscribers (the beat light) instead of React state, to avoid re-rendering on every click.
   const beatListenersRef = useRef(new Set<(beat: BeatEvent) => void>())
+  const wrapListenersRef = useRef(new Set<(round: number) => void>())
   // Metronome events still to come from the count-in bar of the current start.
   const countInLeftRef = useRef(0)
   const playingRef = useRef(false)
@@ -345,6 +353,8 @@ export function useAlphaTab(
         if (!loop.enabled) return
         roundRef.current += 1
         setRound(roundRef.current)
+        const wrappedRound = roundRef.current
+        wrapListenersRef.current.forEach((listener) => listener(wrappedRound))
         if (trainer.enabled && roundRef.current % trainer.everyN === 0 && speed < trainer.targetPct) {
           setSpeedState(Math.min(trainer.targetPct, speed + trainer.stepPct))
         }
@@ -353,9 +363,16 @@ export function useAlphaTab(
         for (const event of e.events) {
           if (event.type !== alphaTab.midi.MidiEventType.AlphaTabMetronome) continue
           const click = event as alphaTab.midi.AlphaTabMetronomeEvent
-          const beat: BeatEvent = { index: click.metronomeNumerator, durationMs: click.metronomeDurationInMilliseconds }
           const inCountIn = countInLeftRef.current > 0
           if (inCountIn) countInLeftRef.current -= 1
+          const beat: BeatEvent = {
+            index: click.metronomeNumerator,
+            durationMs: click.metronomeDurationInMilliseconds,
+            tick: click.tick,
+            countIn: inCountIn,
+            speed: latest.current.speed,
+            round: roundRef.current,
+          }
           const { metronome } = latest.current
           if (metronome.sound === 'tok' && (metronome.enabled || inCountIn)) playClick(metronome.volume, beat.index === 0)
           beatListenersRef.current.forEach((listener) => listener(beat))
@@ -482,6 +499,34 @@ export function useAlphaTab(
   const setTabOnly = useCallback((tabOnly: boolean) => setView((v) => ({ ...v, tabOnly })), [])
   const changeZoom = useCallback((delta: number) => {
     setView((v) => ({ ...v, zoom: clamp(v.zoom + delta, ZOOM_MIN, ZOOM_MAX) }))
+  }, [])
+
+  const seekToTick = useCallback((tick: number) => {
+    const api = apiRef.current
+    if (api) api.tickPosition = Math.max(0, tick)
+  }, [])
+
+  const barStartTick = useCallback((bar: number): number | null => {
+    const api = apiRef.current
+    const masterBar = api?.score?.masterBars[bar]
+    return api?.tickCache && masterBar ? api.tickCache.getMasterBarStart(masterBar) : null
+  }, [])
+
+  const disableLoop = useCallback(() => setLoop((l) => (l.enabled ? { ...l, enabled: false } : l)), [])
+
+  /** Overall tab loudness (alphaTab master volume), used to balance it against a recording. */
+  const setTabVolume = useCallback((volume: number) => {
+    const api = apiRef.current
+    if (api) api.masterVolume = clamp(volume, 0, 1)
+  }, [])
+
+  /** Called with the new round number each time the loop wraps. */
+  const subscribeWrap = useCallback((listener: (round: number) => void) => {
+    const listeners = wrapListenersRef.current
+    listeners.add(listener)
+    return () => {
+      listeners.delete(listener)
+    }
   }, [])
 
   // "Zorlandım": step the tempo back and let the speed trainer count rounds again from here.
@@ -732,6 +777,11 @@ export function useAlphaTab(
     preRoll,
     setPreRoll,
     struggled,
+    seekToTick,
+    barStartTick,
+    disableLoop,
+    setTabVolume,
+    subscribeWrap,
     loadFile,
     selectTrack,
     playPause,

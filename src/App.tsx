@@ -13,6 +13,7 @@ import { Button } from './components/ui'
 import { WelcomeScreen } from './components/WelcomeScreen'
 import { useAlphaTab, type Player } from './player/useAlphaTab'
 import { useNotes } from './player/useNotes'
+import { usePlayAlong } from './player/usePlayAlong'
 import { formatClock, usePomodoro } from './player/usePomodoro'
 import { useRecorder } from './player/useRecorder'
 import { useShortcuts } from './player/useShortcuts'
@@ -41,9 +42,12 @@ function App() {
     }),
     onSyncStart: player.play,
     onSyncStop: player.pause,
+    subscribeBeat: player.subscribeBeat,
   })
+  const playAlong = usePlayAlong(player)
   const pomodoro = usePomodoro({
     onWorkEnd: () => {
+      playAlong.stop()
       player.pause()
       recorder.stop()
     },
@@ -51,14 +55,16 @@ function App() {
   const notes = useNotes(player.songId)
 
   const { stop: stopRecording } = recorder
+  const { stop: stopPlayAlong } = playAlong
   const { loadFile } = player
   // Opening another song ends the current take, so it is saved with the song it belongs to.
   const openFile = useCallback(
     (file: File) => {
+      stopPlayAlong()
       stopRecording()
       void loadFile(file)
     },
-    [stopRecording, loadFile],
+    [stopPlayAlong, stopRecording, loadFile],
   )
 
   useEffect(() => {
@@ -272,7 +278,7 @@ function App() {
         >
           {rightTool === 'recordings' ? (
             hasScore ? (
-              <RecordingsSection recorder={recorder} songTitle={info?.title ?? ''} />
+              <RecordingsSection recorder={recorder} playAlong={playAlong} songTitle={info?.title ?? ''} />
             ) : (
               noScoreHint
             )

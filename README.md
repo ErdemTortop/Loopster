@@ -37,6 +37,8 @@ Tempo, metronom, kademeli hızlanma, loop, parçalar ve transpoze alt çubuktaki
   Bir loop notuna tıklayınca o loop açılır. Notlar tarayıcıda, dosya içeriğine göre saklanır; dosyanın adı değişse de kaybolmaz.
 - **Ses kaydı:** mikrofonla kendi çalışını kaydet (kırmızı düğme ya da R). Kayıtlar parça bazında tarih, tempo ve loop
   bilgisiyle listelenir; dinle, indir ya da sil. İstersen kayıt başlayınca tab da çalar. Kayıtlar tarayıcıda (IndexedDB) saklanır.
+- **Tab ile birlikte dinleme:** tab çalarken yaptığın kayıtlar, kayıttaki tempo, loop ve hız değişimleriyle tab'ın sesiyle
+  aynı anda çalınır; "Kayıt ↔ Tab" dengesiyle hangisini daha çok duyacağını, "Kaydır" ile mikrofon gecikmesini ayarlarsın.
 - **Pomodoro:** odak / mola sayacı (varsayılan 25 / 5 dk). Odak bitince çalma durur, zil çalar ve mola başlar.
   Alt çubuktaki sayaca tıklayarak başlat / duraklat; süreler Ayarlar panelinde.
 

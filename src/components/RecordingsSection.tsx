@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { urlFor, type Recording } from '../player/recordingsDb'
+import { NUDGE_LIMIT_MS, type PlayAlong } from '../player/usePlayAlong'
 import { formatClock } from '../player/usePomodoro'
 import type { Recorder } from '../player/useRecorder'
 import { Button, Toggle } from './ui'
@@ -25,11 +26,15 @@ function extensionFor(mimeType: string): string {
 
 interface Props {
   recorder: Recorder
+  playAlong: PlayAlong
   songTitle: string
 }
 
-export function RecordingsSection({ recorder, songTitle }: Props) {
+const smallLabelClass = 'font-display text-xs font-semibold tracking-[0.14em] text-muted uppercase'
+
+export function RecordingsSection({ recorder, playAlong, songTitle }: Props) {
   const recording = recorder.state === 'recording'
+  const anySynced = recorder.recordings.some((take) => take.sync)
 
   return (
     <div className="space-y-3 px-5 py-4">
@@ -50,10 +55,57 @@ export function RecordingsSection({ recorder, songTitle }: Props) {
         <p className="text-sm text-muted">Bu tarayıcıda ses kaydı kullanılamıyor (https ya da localhost gerekir).</p>
       )}
 
+      {anySynced && (
+        <div className="space-y-2 rounded-lg border border-line bg-bg/40 p-3">
+          <p className={smallLabelClass}>Tab ile birlikte dinleme</p>
+          <label className="flex items-center gap-2 text-sm">
+            <span className="w-12 text-muted">Kayıt</span>
+            <input
+              type="range"
+              min={-100}
+              max={100}
+              step={5}
+              value={Math.round(playAlong.balance * 100)}
+              onChange={(e) => playAlong.setBalance(Number(e.target.value) / 100)}
+              onDoubleClick={() => playAlong.setBalance(0)}
+              aria-label="Kayıt ve tab ses dengesi"
+              title="Çift tıkla: ikisi eşit"
+              className="h-8 min-w-0 flex-1 accent-accent"
+            />
+            <span className="w-8 text-right text-muted">Tab</span>
+          </label>
+          <label className="flex items-center gap-2 text-sm" title="Mikrofon gecikmesini düzeltmek için. + kaydı geciktirir, − öne alır.">
+            <span className="w-12 text-muted">Kaydır</span>
+            <input
+              type="range"
+              min={-NUDGE_LIMIT_MS}
+              max={NUDGE_LIMIT_MS}
+              step={5}
+              value={playAlong.nudgeMs}
+              onChange={(e) => playAlong.setNudge(Number(e.target.value))}
+              onDoubleClick={() => playAlong.setNudge(0)}
+              aria-label="Kayıt zamanlamasını kaydır"
+              className="h-8 min-w-0 flex-1 accent-accent"
+            />
+            <span className="led w-16 text-right text-sm">
+              {playAlong.nudgeMs > 0 ? '+' : ''}
+              {playAlong.nudgeMs} ms
+            </span>
+          </label>
+          {playAlong.error && <p className="text-sm text-danger">{playAlong.error}</p>}
+        </div>
+      )}
+
       {recorder.recordings.length > 0 ? (
         <ul className="space-y-2">
           {recorder.recordings.map((take) => (
-            <RecordingItem key={take.id} take={take} songTitle={songTitle} onDelete={() => void recorder.remove(take)} />
+            <RecordingItem
+              key={take.id}
+              take={take}
+              songTitle={songTitle}
+              playAlong={playAlong}
+              onDelete={() => void recorder.remove(take)}
+            />
           ))}
         </ul>
       ) : (
@@ -68,7 +120,16 @@ export function RecordingsSection({ recorder, songTitle }: Props) {
   )
 }
 
-function RecordingItem({ take, songTitle, onDelete }: { take: Recording; songTitle: string; onDelete: () => void }) {
+interface ItemProps {
+  take: Recording
+  songTitle: string
+  playAlong: PlayAlong
+  onDelete: () => void
+}
+
+function RecordingItem({ take, songTitle, playAlong, onDelete }: ItemProps) {
+  const playingAlong = playAlong.playingId === take.id
+  const preparing = playAlong.preparingId === take.id
   const [confirming, setConfirming] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
   useKnownDuration(audioRef)
@@ -92,6 +153,18 @@ function RecordingItem({ take, songTitle, onDelete }: { take: Recording; songTit
         <span className="font-mono text-xs text-muted">{details}</span>
       </div>
       <audio ref={audioRef} controls preload="metadata" src={url} className="h-10 w-full" />
+      {take.sync ? (
+        <Toggle
+          on={playingAlong || preparing}
+          onClick={() => playAlong.toggle(take)}
+          title="Kaydını, kayıt sırasındaki tab ayarlarıyla tab'ın sesiyle aynı anda çalar"
+          className="w-full"
+        >
+          {playingAlong ? 'Birlikte dinlemeyi durdur' : preparing ? 'Hazırlanıyor…' : 'Tab ile birlikte dinle'}
+        </Toggle>
+      ) : (
+        <p className="text-xs text-muted">Tab çalmadan yapılmış; sadece tek başına dinlenebilir.</p>
+      )}
       <div className="flex flex-wrap gap-2">
         <a href={url} download={fileName} className={linkButtonClass}>
           İndir

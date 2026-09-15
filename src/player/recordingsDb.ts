@@ -1,5 +1,24 @@
 /** Recordings live in IndexedDB: audio blobs are far too big for localStorage. */
 
+/** Tab timing captured during a take, so it can later be replayed together with the tab. */
+export interface RecordingSync {
+  /** Milliseconds from the start of the audio to the first tab beat (count-in excluded). */
+  anchorMs: number
+  /** Song tick and tempo percentage of that first beat. */
+  tick: number
+  speed: number
+  /** Loop at that moment (zero-based bars), or null when no loop was active. */
+  loopStart: number | null
+  loopEnd: number | null
+  /**
+   * Tempo changes during the take. With a loop they are keyed by loop round (relative to the first beat),
+   * because the speed trainer changes speed when the loop wraps; without a loop by beat index.
+   */
+  speedChanges: { beat: number; round: number; speed: number }[]
+  /** If the tab was paused mid-take, the replay stays in sync only up to this beat index. */
+  lastSyncedBeat: number | null
+}
+
 export interface Recording {
   id: string
   songId: string
@@ -12,6 +31,8 @@ export interface Recording {
   /** Zero-based loop bars at the time of recording, or null when no loop was active. */
   loopStart: number | null
   loopEnd: number | null
+  /** Present only for takes recorded while the tab was playing. */
+  sync?: RecordingSync
 }
 
 const DB_NAME = 'loopster'
