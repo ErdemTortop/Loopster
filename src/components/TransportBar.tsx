@@ -1,6 +1,7 @@
 import { SPEED_MAX, SPEED_MIN, type Player } from '../player/useAlphaTab'
 import { formatClock } from '../player/usePomodoro'
 import type { Recorder } from '../player/useRecorder'
+import { BeatLight } from './BeatLight'
 import { LevelMeter } from './RecordingsSection'
 import { PauseIcon, PlayIcon, SlidersIcon, StepBackIcon, StepForwardIcon, StopIcon } from './icons'
 import { LedDot, Readout } from './ui'
@@ -118,6 +119,14 @@ export function TransportBar({ player, recorder, canPlay, statusMessage, shelfOp
             '--'
           )}
         </Readout>
+
+        {hasScore && player.visualMetronome && (
+          <BeatLight
+            beatsPerBar={info.timeSignatures[player.currentBar] ?? 4}
+            subscribe={player.subscribeBeat}
+            playing={player.isPlaying}
+          />
+        )}
 
         <div className="flex h-14 items-stretch overflow-hidden rounded-xl border border-black/50 bg-display shadow-[inset_0_2px_8px_rgb(0_0_0/0.65)]">
           <button

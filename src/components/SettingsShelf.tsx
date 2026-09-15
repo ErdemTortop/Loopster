@@ -76,6 +76,14 @@ export function SettingsShelf({ player, disabled, onClose }: Props) {
                 Giriş sayımı
               </Toggle>
             </div>
+            <Toggle
+              on={player.visualMetronome}
+              onClick={() => player.setVisualMetronome(!player.visualMetronome)}
+              title="Alt çubukta her vuruşta yanıp sönen ışıklar; ses kapalıyken de çalışır"
+              className="w-full"
+            >
+              Görsel vuruş
+            </Toggle>
             <label className="flex items-center gap-3">
               <span className="font-display text-xs font-semibold tracking-[0.14em] text-muted uppercase">Ses</span>
               <input

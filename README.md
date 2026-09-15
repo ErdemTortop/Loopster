@@ -20,6 +20,8 @@ Ekran düzeni: solda **Notlar**, sağda **Pomodoro** ve **Kayıt** düğmeleri; 
 Tempo, metronom, kademeli hızlanma, loop, parçalar ve transpoze alt çubuktaki **Ayarlar** (P) ile açılan rafta.
 
 - **Tempo:** %25–%150 arası hız. Gerçek BPM hesaplanıp gösterilir; %50 / %75 / %100 hızlı düğmeleri.
+- **Görsel metronom:** alt çubukta her vuruşta yanıp sönen ışıklar (ölçünün ilk vuruşu daha parlak). Metronom sesi
+  kapalıyken de çalışır; Ayarlar'daki "Görsel vuruş" ile açılıp kapanır.
 - **Metronom** ve ses seviyesi. **Giriş sayımı** açıksa Çal'a basınca bir ölçü sayar.
 - **Loop zarfı:** Guitar Pro'daki gibi notanın üzerinde bir kutu, tam ölçü sınırlarında döner. Fareyle ölçülerin
   üzerinden sürükleyerek oluştur, kenarlarındaki tutamaçları çekerek genişlet ya da daralt (tablette parmakla da).

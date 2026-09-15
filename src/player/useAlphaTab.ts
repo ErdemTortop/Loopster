@@ -10,6 +10,8 @@ export interface ScoreInfo {
   barCount: number
   tempo: number
   tracks: { index: number; name: string }[]
+  /** Beats per bar (time signature numerator) for each bar. */
+  timeSignatures: number[]
 }
 
 export type LoadStatus = 'idle' | 'loading' | 'rendering' | 'ready' | 'error'
@@ -62,6 +64,13 @@ export interface ViewState {
   zoom: number
 }
 
+/** One metronome click, delivered in sync with the audio output (also while the metronome is muted). */
+export interface BeatEvent {
+  /** Zero-based position within the bar. */
+  index: number
+  durationMs: number
+}
+
 const base = import.meta.env.BASE_URL
 const NO_LOOP: LoopState = { enabled: false, start: 0, end: 0 }
 
@@ -80,6 +89,16 @@ function loadView(): ViewState {
     }
   } catch {
     return { tabOnly: false, zoom: 100 }
+  }
+}
+
+const VISUAL_METRONOME_KEY = 'loopster.visualMetronome'
+
+function loadVisualMetronome(): boolean {
+  try {
+    return localStorage.getItem(VISUAL_METRONOME_KEY) !== '0'
+  } catch {
+    return true
   }
 }
 
@@ -153,6 +172,9 @@ export function useAlphaTab(
   const [transpose, setTransposeState] = useState(0)
   const [songId, setSongId] = useState<string | null>(null)
   const [view, setView] = useState<ViewState>(loadView)
+  const [visualMetronome, setVisualMetronomeState] = useState(loadVisualMetronome)
+  // Beats go straight to subscribers (the beat light) instead of React state, to avoid re-rendering on every click.
+  const beatListenersRef = useRef(new Set<(beat: BeatEvent) => void>())
 
   // alphaTab handlers are registered once, so they read current values from here.
   const latest = useRef({ speed, loop, trainer, trackIndex, isPlaying, view })
@@ -190,6 +212,8 @@ export function useAlphaTab(
     })
     apiRef.current = api
     setApiEpoch((n) => n + 1)
+    // Metronome ticks are reported even when the metronome is muted, timed to the audio output.
+    api.midiEventsPlayedFilter = [alphaTab.midi.MidiEventType.AlphaTabMetronome]
     if (import.meta.env.DEV) Object.assign(window, { __loopsterApi: api })
 
     const moveToBar = (bar: number) => {
@@ -207,6 +231,7 @@ export function useAlphaTab(
           artist: score.artist,
           barCount: score.masterBars.length,
           tempo: score.tempo,
+          timeSignatures: score.masterBars.map((bar) => bar.timeSignatureNumerator),
           tracks: score.tracks.map((t) => ({ index: t.index, name: t.name })),
         })
         setTrackIndex(0)
@@ -254,6 +279,14 @@ export function useAlphaTab(
         setRound(roundRef.current)
         if (trainer.enabled && roundRef.current % trainer.everyN === 0 && speed < trainer.targetPct) {
           setSpeedState(Math.min(trainer.targetPct, speed + trainer.stepPct))
+        }
+      }),
+      api.midiEventsPlayed.on((e) => {
+        for (const event of e.events) {
+          if (event.type !== alphaTab.midi.MidiEventType.AlphaTabMetronome) continue
+          const click = event as alphaTab.midi.AlphaTabMetronomeEvent
+          const beat: BeatEvent = { index: click.metronomeNumerator, durationMs: click.metronomeDurationInMilliseconds }
+          beatListenersRef.current.forEach((listener) => listener(beat))
         }
       }),
       api.error.on((e: Error) => {
@@ -358,6 +391,23 @@ export function useAlphaTab(
   const setTabOnly = useCallback((tabOnly: boolean) => setView((v) => ({ ...v, tabOnly })), [])
   const changeZoom = useCallback((delta: number) => {
     setView((v) => ({ ...v, zoom: clamp(v.zoom + delta, ZOOM_MIN, ZOOM_MAX) }))
+  }, [])
+
+  const subscribeBeat = useCallback((listener: (beat: BeatEvent) => void) => {
+    const listeners = beatListenersRef.current
+    listeners.add(listener)
+    return () => {
+      listeners.delete(listener)
+    }
+  }, [])
+
+  const setVisualMetronome = useCallback((enabled: boolean) => {
+    setVisualMetronomeState(enabled)
+    try {
+      localStorage.setItem(VISUAL_METRONOME_KEY, enabled ? '1' : '0')
+    } catch {
+      // Not remembered; fine.
+    }
   }, [])
 
   const loadFile = useCallback(async (file: File) => {
@@ -536,6 +586,9 @@ export function useAlphaTab(
     view,
     setTabOnly,
     changeZoom,
+    visualMetronome,
+    setVisualMetronome,
+    subscribeBeat,
     loadFile,
     selectTrack,
     playPause,
