@@ -7,18 +7,20 @@ export interface ShortcutActions {
   toggleLoop: () => void
   toggleMetronome: () => void
   changeSpeed: (delta: number) => void
+  togglePanel: () => void
   toggleHelp: () => void
-  /** Closes the help panel; returns true if it was open. */
-  closeHelp: () => boolean
+  /** Closes the shortcut list or the settings panel; returns true if something was open. */
+  closeOverlay: () => boolean
 }
 
 export const SHORTCUTS: { keys: string[]; label: string }[] = [
   { keys: ['Boşluk'], label: 'Çal / duraklat' },
-  { keys: ['Esc'], label: 'Durdur' },
+  { keys: ['Esc'], label: 'Durdur (açık bir panel varsa önce onu kapatır)' },
   { keys: ['←', '→'], label: 'Bir ölçü geri / ileri' },
   { keys: ['L'], label: 'Loop aç / kapa' },
   { keys: ['M'], label: 'Metronom aç / kapa' },
   { keys: ['−', '+'], label: 'Hızı %5 azalt / artır' },
+  { keys: ['P'], label: 'Ayarlar panelini aç / kapa' },
   { keys: ['?'], label: 'Kısayol listesini aç / kapa' },
 ]
 
@@ -47,7 +49,12 @@ export function useShortcuts(actions: ShortcutActions, enabled: boolean) {
         a.toggleHelp()
         return
       }
-      if (key === 'Escape' && a.closeHelp()) {
+      if (key === 'p') {
+        e.preventDefault()
+        a.togglePanel()
+        return
+      }
+      if (key === 'Escape' && a.closeOverlay()) {
         e.preventDefault()
         return
       }

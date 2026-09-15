@@ -35,6 +35,7 @@ Zor bölümü loop'a al, yavaşlat, metronomla çal, hızı kademeli olarak art�
 | L | Loop aç / kapa |
 | M | Metronom aç / kapa |
 | − / + | Hızı %5 azalt / artır |
+| P | Ayarlar panelini aç / kapa |
 | ? | Kısayol listesi |
 
 ## Geliştirme

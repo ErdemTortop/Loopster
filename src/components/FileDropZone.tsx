@@ -1,5 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { SUPPORTED_EXTENSIONS } from '../player/useAlphaTab'
+import { FolderIcon } from './icons'
+import { Button } from './ui'
 
 interface Props {
   onFile: (file: File) => void
@@ -47,47 +49,43 @@ export function FileDropZone({ onFile, compact = false }: Props) {
     }
   }, [onFile])
 
-  const input = (
-    <input
-      ref={inputRef}
-      type="file"
-      accept={SUPPORTED_EXTENSIONS.join(',')}
-      className="hidden"
-      onChange={(e) => {
-        const file = e.target.files?.[0]
-        if (file) onFile(file)
-        e.target.value = ''
-      }}
-    />
-  )
+  const openPicker = () => inputRef.current?.click()
 
   return (
     <>
-      {input}
+      <input
+        ref={inputRef}
+        type="file"
+        accept={SUPPORTED_EXTENSIONS.join(',')}
+        className="hidden"
+        onChange={(e) => {
+          const file = e.target.files?.[0]
+          if (file) onFile(file)
+          e.target.value = ''
+        }}
+      />
       {dragging && (
-        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-amber-500/20 text-3xl font-bold text-amber-200 backdrop-blur-sm light:text-amber-800">
-          Dosyayı bırak
+        <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-bg/80 p-6 backdrop-blur-sm">
+          <div className="flex h-full w-full items-center justify-center rounded-3xl border-4 border-dashed border-accent">
+            <span className="font-display text-5xl font-semibold tracking-wide text-accent uppercase">Dosyayı bırak</span>
+          </div>
         </div>
       )}
       {compact ? (
-        <button
-          type="button"
-          onClick={() => inputRef.current?.click()}
-          className="rounded-lg border border-neutral-700 px-4 py-2 font-medium hover:bg-neutral-800 light:border-neutral-300 light:hover:bg-neutral-200"
-        >
-          Dosya aç
-        </button>
+        <Button onClick={openPicker}>
+          <FolderIcon />
+          <span className="hidden sm:inline">Dosya aç</span>
+        </Button>
       ) : (
         <button
           type="button"
-          onClick={() => inputRef.current?.click()}
-          className="flex w-full max-w-xl flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-neutral-700 px-8 py-16 text-center hover:border-amber-500 hover:bg-neutral-900 light:border-neutral-300 light:hover:bg-neutral-100"
+          onClick={openPicker}
+          className="flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-line bg-surface/85 px-6 py-12 text-center transition-colors hover:border-accent hover:bg-surface"
         >
-          <span className="text-2xl font-semibold">Guitar Pro dosyası aç</span>
-          <span className="text-neutral-400 light:text-neutral-600">
-            Tıkla ya da dosyayı buraya sürükle
-          </span>
-          <span className="text-sm text-neutral-500">{SUPPORTED_EXTENSIONS.join('  ')}</span>
+          <FolderIcon className="size-12 text-accent" />
+          <span className="font-display text-3xl font-semibold tracking-wide uppercase">Guitar Pro dosyası aç</span>
+          <span className="text-muted">Tıkla ya da dosyayı sayfanın herhangi bir yerine sürükle</span>
+          <span className="font-mono text-xs tracking-wider text-muted">{SUPPORTED_EXTENSIONS.join('  ')}</span>
         </button>
       )}
     </>

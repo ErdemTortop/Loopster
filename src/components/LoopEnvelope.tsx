@@ -177,13 +177,13 @@ export function LoopEnvelope({ player }: { player: Player }) {
         segments.map((s) => (
           <div
             key={`${s.x}-${s.y}`}
-            className={`pointer-events-none absolute rounded-md border-2 border-amber-500 bg-amber-400/15 ${
+            className={`pointer-events-none absolute rounded-md border-2 border-accent bg-accent/15 ${
               draft ? 'border-dashed' : ''
             }`}
             style={{ left: s.x, top: s.y, width: s.right - s.x, height: s.bottom - s.y }}
           >
             {s.first && (
-              <span className="absolute -top-3 left-4 rounded bg-amber-500 px-2 py-0.5 text-xs font-bold whitespace-nowrap text-neutral-950">
+              <span className="absolute -top-3 left-4 rounded bg-accent px-2 py-0.5 font-display text-sm leading-none font-semibold tracking-[0.12em] whitespace-nowrap text-accent-ink uppercase">
                 Loop {range.start + 1}–{range.end + 1}
               </span>
             )}
@@ -204,7 +204,7 @@ function Handle({ side }: { side: 'start' | 'end' }) {
         side === 'start' ? '-left-5' : '-right-5'
       }`}
     >
-      <div className="pointer-events-none h-full max-h-28 w-3 rounded-full border-2 border-white bg-amber-500 shadow-md" />
+      <div className="pointer-events-none h-full max-h-28 w-3 rounded-full border-2 border-white bg-accent shadow-md" />
     </div>
   )
 }
