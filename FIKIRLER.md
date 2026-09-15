@@ -12,8 +12,8 @@ Durumlar: **bekliyor** · **planlandı (Faz N)** · **yapıldı** · **vazgeçil
 | --- | --- | --- |
 | Loop için Guitar Pro tarzı zarf | yapıldı | Faz 2 sonrası; A/B tuşları ve ölçü kutuları kaldırıldı |
 | Egzersizler için pomodoro sayacı | yapıldı | Süre bitince çalma durur, zil çalar, mola başlar; 25/5 dk ayarlanabilir |
-| Not alabilme | yapılıyor (2/3) | Parçaya genel not + loop aralığına bağlı notlar (nota tıklayınca loop'u açar) |
-| Ses kaydetme ve kaydı dinleme | planlandı (3/3) | Mikrofonla kayıt; parça bazında liste, dinle / sil / indir; tarayıcıda saklanır |
+| Not alabilme | yapıldı | Parçaya genel not + loop aralığına bağlı notlar (nota tıklayınca loop'u açar) |
+| Ses kaydetme ve kaydı dinleme | yapıldı | Mikrofonla kayıt; parça bazında liste, dinle / sil / indir; tarayıcıda saklanır |
 
 ## Ertelenenler
 

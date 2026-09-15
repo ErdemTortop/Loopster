@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { FileDropZone } from './components/FileDropZone'
 import { KeyboardIcon, MoonIcon, SunIcon } from './components/icons'
 import { LoopEnvelope } from './components/LoopEnvelope'
@@ -10,6 +10,7 @@ import { WelcomeScreen } from './components/WelcomeScreen'
 import { useAlphaTab, type Player } from './player/useAlphaTab'
 import { useNotes } from './player/useNotes'
 import { formatClock, usePomodoro } from './player/usePomodoro'
+import { useRecorder } from './player/useRecorder'
 import { useShortcuts } from './player/useShortcuts'
 
 type Theme = 'dark' | 'light'
@@ -21,8 +22,35 @@ function App() {
   const containerRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const player = useAlphaTab(containerRef, scrollRef)
-  const pomodoro = usePomodoro({ onWorkEnd: player.pause })
+  const recorder = useRecorder({
+    songId: player.songId,
+    getContext: () => ({
+      speed: player.speed,
+      bpm: player.info ? Math.round((player.info.tempo * player.speed) / 100) : null,
+      loopStart: player.loop.enabled ? player.loop.start : null,
+      loopEnd: player.loop.enabled ? player.loop.end : null,
+    }),
+    onSyncStart: player.play,
+    onSyncStop: player.pause,
+  })
+  const pomodoro = usePomodoro({
+    onWorkEnd: () => {
+      player.pause()
+      recorder.stop()
+    },
+  })
   const notes = useNotes(player.songId)
+
+  const { stop: stopRecording } = recorder
+  const { loadFile } = player
+  // Opening another song ends the current take, so it is saved with the song it belongs to.
+  const openFile = useCallback(
+    (file: File) => {
+      stopRecording()
+      void loadFile(file)
+    },
+    [stopRecording, loadFile],
+  )
 
   useEffect(() => {
     document.documentElement.classList.toggle('light', theme === 'light')
@@ -40,6 +68,7 @@ function App() {
       toggleLoop: player.toggleLoop,
       toggleMetronome: player.toggleMetronome,
       changeSpeed: player.changeSpeed,
+      toggleRecording: recorder.toggle,
       togglePanel: () => setPanelOpen((v) => !v),
       toggleHelp: () => setShowHelp((v) => !v),
       closeOverlay: () => {
@@ -93,7 +122,7 @@ function App() {
               </select>
             </label>
           )}
-          {hasScore && <FileDropZone onFile={player.loadFile} compact />}
+          {hasScore && <FileDropZone onFile={openFile} compact />}
           <Button onClick={() => setShowHelp(true)} aria-label="Klavye kısayolları" title="Klavye kısayolları (?)" className="w-11 px-0">
             <KeyboardIcon />
           </Button>
@@ -111,6 +140,19 @@ function App() {
       {error && (
         <div role="alert" className="relative z-40 border-b border-danger/50 bg-danger/15 px-4 py-3 sm:px-5">
           <strong className="font-display tracking-wide text-danger uppercase">Hata:</strong> {error}
+        </div>
+      )}
+      {recorder.error && (
+        <div
+          role="alert"
+          className="relative z-40 flex flex-wrap items-center gap-3 border-b border-danger/50 bg-danger/15 px-4 py-2 sm:px-5"
+        >
+          <span>
+            <strong className="font-display tracking-wide text-danger uppercase">Kayıt:</strong> {recorder.error}
+          </span>
+          <Button onClick={recorder.clearError} className="ml-auto">
+            Tamam
+          </Button>
         </div>
       )}
 
@@ -133,7 +175,7 @@ function App() {
       {/* overflow-hidden clips the closed drawer so it never slides over the transport bar. */}
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
         <main ref={scrollRef} className="relative min-h-0 flex-1 overflow-auto">
-          {!hasScore && status !== 'loading' && <WelcomeScreen onFile={player.loadFile} />}
+          {!hasScore && status !== 'loading' && <WelcomeScreen onFile={openFile} />}
           {status === 'loading' && (
             <div className="flex h-full items-center justify-center gap-3 font-display text-xl tracking-[0.14em] text-muted uppercase">
               <span aria-hidden="true" className="size-2.5 animate-pulse rounded-full bg-led" />
@@ -166,6 +208,7 @@ function App() {
             player={player}
             pomodoro={pomodoro}
             notes={notes}
+            recorder={recorder}
             disabled={!hasScore}
             onClose={() => setPanelOpen(false)}
           />
@@ -175,6 +218,7 @@ function App() {
       <TransportBar
         player={player}
         pomodoro={pomodoro}
+        recorder={recorder}
         canPlay={canPlay}
         statusMessage={statusText(player)}
         panelOpen={panelOpen}

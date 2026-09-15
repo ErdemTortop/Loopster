@@ -26,6 +26,8 @@ Zor bölümü loop'a al, yavaşlat, metronomla çal, hızı kademeli olarak art�
 - **Transpoze:** yarım ses adımlarla, sadece ses kayar (tab aynı kalır). Kapo ya da düşük akort için.
 - **Notlar:** her parça için genel bir not ve loop aralıklarına bağlı notlar (ör. "33–40: 3. parmak kayıyor").
   Bir loop notuna tıklayınca o loop açılır. Notlar tarayıcıda, dosya içeriğine göre saklanır; dosyanın adı değişse de kaybolmaz.
+- **Ses kaydı:** mikrofonla kendi çalışını kaydet (kırmızı düğme ya da R). Kayıtlar parça bazında tarih, tempo ve loop
+  bilgisiyle listelenir; dinle, indir ya da sil. İstersen kayıt başlayınca tab da çalar. Kayıtlar tarayıcıda (IndexedDB) saklanır.
 - **Pomodoro:** odak / mola sayacı (varsayılan 25 / 5 dk). Odak bitince çalma durur, zil çalar ve mola başlar.
   Alt çubuktaki sayaca tıklayarak başlat / duraklat; süreler Ayarlar panelinde.
 
@@ -39,6 +41,7 @@ Zor bölümü loop'a al, yavaşlat, metronomla çal, hızı kademeli olarak art�
 | L | Loop aç / kapa |
 | M | Metronom aç / kapa |
 | − / + | Hızı %5 azalt / artır |
+| R | Kayda başla / durdur |
 | P | Ayarlar panelini aç / kapa |
 | ? | Kısayol listesi |
 

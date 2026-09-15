@@ -1,7 +1,9 @@
 import { SPEED_MAX, SPEED_MIN, type Player } from '../player/useAlphaTab'
 import type { Notes } from '../player/useNotes'
 import { formatClock, type Pomodoro } from '../player/usePomodoro'
+import type { Recorder } from '../player/useRecorder'
 import { NotesSection } from './NotesSection'
+import { RecordingsSection } from './RecordingsSection'
 import { Button, LedDot, NumberField, Readout, Section, Toggle } from './ui'
 
 const hintClass = 'text-sm text-muted'
@@ -10,11 +12,12 @@ interface Props {
   player: Player
   pomodoro: Pomodoro
   notes: Notes
+  recorder: Recorder
   disabled: boolean
   onClose: () => void
 }
 
-export function PracticePanel({ player, pomodoro, notes, disabled, onClose }: Props) {
+export function PracticePanel({ player, pomodoro, notes, recorder, disabled, onClose }: Props) {
   const { info, speed, metronome, loop, trainer, round, transpose } = player
 
   return (
@@ -66,6 +69,8 @@ export function PracticePanel({ player, pomodoro, notes, disabled, onClose }: Pr
           {disabled && <p className={`px-5 py-4 ${hintClass}`}>Diğer ayarlar bir dosya açınca etkinleşir.</p>}
 
           <NotesSection player={player} notes={notes} />
+
+          <RecordingsSection recorder={recorder} songTitle={info?.title ?? ''} />
 
           <Section title="Tempo">
             <div className="flex items-center gap-3">

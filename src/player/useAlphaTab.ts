@@ -326,6 +326,9 @@ export function useAlphaTab(
   }, [])
 
   const playPause = useCallback(() => apiRef.current?.playPause(), [])
+  const play = useCallback(() => {
+    apiRef.current?.play()
+  }, [])
   const pause = useCallback(() => apiRef.current?.pause(), [])
   const stop = useCallback(() => apiRef.current?.stop(), [])
 
@@ -458,6 +461,7 @@ export function useAlphaTab(
     loadFile,
     selectTrack,
     playPause,
+    play,
     pause,
     stop,
     jumpBars,

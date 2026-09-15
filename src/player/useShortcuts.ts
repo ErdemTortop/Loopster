@@ -7,6 +7,7 @@ export interface ShortcutActions {
   toggleLoop: () => void
   toggleMetronome: () => void
   changeSpeed: (delta: number) => void
+  toggleRecording: () => void
   togglePanel: () => void
   toggleHelp: () => void
   /** Closes the shortcut list or the settings panel; returns true if something was open. */
@@ -20,6 +21,7 @@ export const SHORTCUTS: { keys: string[]; label: string }[] = [
   { keys: ['L'], label: 'Loop aç / kapa' },
   { keys: ['M'], label: 'Metronom aç / kapa' },
   { keys: ['−', '+'], label: 'Hızı %5 azalt / artır' },
+  { keys: ['R'], label: 'Kayda başla / durdur' },
   { keys: ['P'], label: 'Ayarlar panelini aç / kapa' },
   { keys: ['?'], label: 'Kısayol listesini aç / kapa' },
 ]
@@ -67,6 +69,7 @@ export function useShortcuts(actions: ShortcutActions, enabled: boolean) {
         ArrowRight: () => a.jumpBars(1),
         l: a.toggleLoop,
         m: a.toggleMetronome,
+        r: a.toggleRecording,
         '-': () => a.changeSpeed(-5),
         '+': () => a.changeSpeed(5),
         '=': () => a.changeSpeed(5),

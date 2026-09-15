@@ -1,11 +1,14 @@
 import { SPEED_MAX, SPEED_MIN, type Player } from '../player/useAlphaTab'
 import { formatClock, type Pomodoro } from '../player/usePomodoro'
+import type { Recorder } from '../player/useRecorder'
+import { LevelMeter } from './RecordingsSection'
 import { PauseIcon, PlayIcon, SlidersIcon, StepBackIcon, StepForwardIcon, StopIcon } from './icons'
 import { LedDot, Readout } from './ui'
 
 interface Props {
   player: Player
   pomodoro: Pomodoro
+  recorder: Recorder
   canPlay: boolean
   statusMessage: string | null
   panelOpen: boolean
@@ -18,7 +21,8 @@ const stepperClass =
   'w-12 bg-raised text-2xl font-semibold text-ink transition-colors hover:text-accent disabled:cursor-not-allowed disabled:opacity-40'
 
 /** Always-visible controls, sized for reaching over with a guitar in your lap. */
-export function TransportBar({ player, pomodoro, canPlay, statusMessage, panelOpen, onTogglePanel }: Props) {
+export function TransportBar({ player, pomodoro, recorder, canPlay, statusMessage, panelOpen, onTogglePanel }: Props) {
+  const recording = recorder.state === 'recording'
   const { info, loop, speed } = player
   const hasScore = info !== null
   const bpm = info
@@ -70,7 +74,36 @@ export function TransportBar({ player, pomodoro, canPlay, statusMessage, panelOp
               <StepForwardIcon />
             </button>
           </div>
+          <button
+            type="button"
+            onClick={recorder.toggle}
+            disabled={!hasScore || !recorder.supported || recorder.state === 'requesting'}
+            aria-pressed={recording}
+            aria-label={recording ? 'Kaydı durdur' : 'Kayda başla'}
+            title="Mikrofonla kaydet (R)"
+            className={`${keyClass} size-14 rounded-xl ${recording ? 'border-danger' : ''}`}
+          >
+            <span
+              aria-hidden="true"
+              className={`size-5 bg-danger transition-all ${
+                recording ? 'rounded-sm shadow-[0_0_12px_var(--color-danger)]' : 'rounded-full'
+              } ${recorder.state === 'requesting' ? 'animate-pulse' : ''}`}
+            />
+          </button>
         </div>
+
+        {recording && (
+          <div className="flex h-14 min-w-28 flex-col justify-center rounded-xl border border-danger/60 bg-display px-3 shadow-[inset_0_2px_8px_rgb(0_0_0/0.65)]">
+            <span className="flex items-center gap-1.5 font-display text-[0.7rem] leading-none font-semibold tracking-[0.2em] text-[#ff8a7d] uppercase">
+              <span aria-hidden="true" className="size-1.5 animate-pulse rounded-full bg-danger" />
+              Kayıt
+            </span>
+            <span className="led mt-1 text-xl leading-none font-semibold text-[#ff8a7d]">
+              {formatClock(recorder.elapsedMs)}
+            </span>
+            <LevelMeter getLevel={recorder.getLevel} />
+          </div>
+        )}
 
         <Readout label="Ölçü">
           {hasScore ? (
