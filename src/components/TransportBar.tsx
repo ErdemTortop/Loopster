@@ -1,5 +1,5 @@
 import { SPEED_MAX, SPEED_MIN, type Player } from '../player/useAlphaTab'
-import { formatClock, type Pomodoro } from '../player/usePomodoro'
+import { formatClock } from '../player/usePomodoro'
 import type { Recorder } from '../player/useRecorder'
 import { LevelMeter } from './RecordingsSection'
 import { PauseIcon, PlayIcon, SlidersIcon, StepBackIcon, StepForwardIcon, StopIcon } from './icons'
@@ -7,21 +7,21 @@ import { LedDot, Readout } from './ui'
 
 interface Props {
   player: Player
-  pomodoro: Pomodoro
   recorder: Recorder
   canPlay: boolean
   statusMessage: string | null
-  panelOpen: boolean
-  onTogglePanel: () => void
+  shelfOpen: boolean
+  onToggleShelf: () => void
 }
 
 const keyClass =
   'inline-flex items-center justify-center border border-line bg-raised text-ink transition-colors select-none hover:border-accent/60 active:translate-y-px disabled:cursor-not-allowed disabled:opacity-40'
 const stepperClass =
   'w-12 bg-raised text-2xl font-semibold text-ink transition-colors hover:text-accent disabled:cursor-not-allowed disabled:opacity-40'
+const recordingRed = '#ff8a7d'
 
 /** Always-visible controls, sized for reaching over with a guitar in your lap. */
-export function TransportBar({ player, pomodoro, recorder, canPlay, statusMessage, panelOpen, onTogglePanel }: Props) {
+export function TransportBar({ player, recorder, canPlay, statusMessage, shelfOpen, onToggleShelf }: Props) {
   const recording = recorder.state === 'recording'
   const { info, loop, speed } = player
   const hasScore = info !== null
@@ -94,11 +94,14 @@ export function TransportBar({ player, pomodoro, recorder, canPlay, statusMessag
 
         {recording && (
           <div className="flex h-14 min-w-28 flex-col justify-center rounded-xl border border-danger/60 bg-display px-3 shadow-[inset_0_2px_8px_rgb(0_0_0/0.65)]">
-            <span className="flex items-center gap-1.5 font-display text-[0.7rem] leading-none font-semibold tracking-[0.2em] text-[#ff8a7d] uppercase">
+            <span
+              className="flex items-center gap-1.5 font-display text-[0.7rem] leading-none font-semibold tracking-[0.2em] uppercase"
+              style={{ color: recordingRed }}
+            >
               <span aria-hidden="true" className="size-1.5 animate-pulse rounded-full bg-danger" />
               Kayıt
             </span>
-            <span className="led mt-1 text-xl leading-none font-semibold text-[#ff8a7d]">
+            <span className="led mt-1 text-xl leading-none font-semibold" style={{ color: recordingRed }}>
               {formatClock(recorder.elapsedMs)}
             </span>
             <LevelMeter getLevel={recorder.getLevel} />
@@ -164,33 +167,12 @@ export function TransportBar({ player, pomodoro, recorder, canPlay, statusMessag
           {statusMessage && <span className="text-sm text-muted">{statusMessage}</span>}
           <button
             type="button"
-            onClick={pomodoro.toggle}
-            aria-pressed={pomodoro.running}
-            aria-label={pomodoro.running ? 'Pomodoro sayacını duraklat' : 'Pomodoro sayacını başlat'}
-            title="Pomodoro: tıkla başlat / duraklat (süreler Ayarlar'da)"
-            className={`flex h-14 min-w-24 flex-col justify-center rounded-xl border bg-display px-3 text-left shadow-[inset_0_2px_8px_rgb(0_0_0/0.65)] transition-colors hover:border-accent/60 ${
-              pomodoro.running ? 'border-accent/60' : 'border-black/50'
-            }`}
-          >
-            <span className="font-display text-[0.7rem] leading-none font-semibold tracking-[0.2em] text-[#8d877c] uppercase">
-              {pomodoro.phase === 'break' ? 'Mola' : 'Odak'}
-              {!pomodoro.running && pomodoro.phase !== 'idle' ? ' · durdu' : ''}
-            </span>
-            <span
-              className={`led ${pomodoro.phase === 'break' ? 'led-break' : ''} mt-1 text-2xl leading-none font-semibold ${
-                pomodoro.running ? '' : 'opacity-60'
-              }`}
-            >
-              {formatClock(pomodoro.remainingMs)}
-            </span>
-          </button>
-          <button
-            type="button"
-            onClick={onTogglePanel}
-            aria-expanded={panelOpen}
-            aria-controls="settings-panel"
+            onClick={onToggleShelf}
+            aria-expanded={shelfOpen}
+            aria-controls="settings-shelf"
+            title="Ayarlar (P)"
             className={`${keyClass} h-14 gap-2 rounded-xl px-4 font-display text-base font-semibold tracking-wide uppercase ${
-              panelOpen ? 'border-accent text-accent' : ''
+              shelfOpen ? 'border-accent text-accent' : ''
             }`}
           >
             <SlidersIcon />

@@ -1,7 +1,7 @@
 import { useState, type FormEvent } from 'react'
 import type { Player } from '../player/useAlphaTab'
 import type { Notes } from '../player/useNotes'
-import { Button, Section } from './ui'
+import { Button } from './ui'
 
 const fieldClass =
   'rounded-lg border border-line bg-raised text-sm placeholder:text-muted focus:outline-2 focus:outline-accent disabled:opacity-50'
@@ -19,7 +19,7 @@ export function NotesSection({ player, notes }: { player: Player; notes: Notes }
   }
 
   return (
-    <Section title="Notlar">
+    <div className="space-y-3 px-5 py-4">
       <textarea
         value={notes.general}
         onChange={(e) => notes.setGeneral(e.target.value)}
@@ -82,6 +82,6 @@ export function NotesSection({ player, notes }: { player: Player; notes: Notes }
       )}
 
       <p className="text-xs text-muted">Notlar bu tarayıcıda, parçaya özel ve otomatik saklanır.</p>
-    </Section>
+    </div>
   )
 }

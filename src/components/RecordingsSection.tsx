@@ -2,7 +2,7 @@ import { useEffect, useRef, useState, type RefObject } from 'react'
 import { urlFor, type Recording } from '../player/recordingsDb'
 import { formatClock } from '../player/usePomodoro'
 import type { Recorder } from '../player/useRecorder'
-import { Button, Section, Toggle } from './ui'
+import { Button, Toggle } from './ui'
 
 const linkButtonClass =
   'inline-flex min-h-11 items-center justify-center gap-2 rounded-lg border border-line bg-raised px-3 font-display text-base font-semibold tracking-wide text-ink uppercase transition-colors hover:border-accent/60'
@@ -32,7 +32,7 @@ export function RecordingsSection({ recorder, songTitle }: Props) {
   const recording = recorder.state === 'recording'
 
   return (
-    <Section title="Kayıtlar">
+    <div className="space-y-3 px-5 py-4">
       <div className="grid grid-cols-2 gap-2">
         <Toggle
           on={recording}
@@ -64,7 +64,7 @@ export function RecordingsSection({ recorder, songTitle }: Props) {
         Kayıtlar bu tarayıcıda saklanır. Hoparlörden çalan tab da mikrofona girer; sadece kendi çalışını kaydetmek için
         kulaklık kullan.
       </p>
-    </Section>
+    </div>
   )
 }
 

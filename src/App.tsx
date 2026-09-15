@@ -1,9 +1,13 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FileDropZone } from './components/FileDropZone'
-import { KeyboardIcon, MoonIcon, SunIcon } from './components/icons'
+import { KeyboardIcon, MicIcon, MoonIcon, NoteIcon, SunIcon, TimerIcon } from './components/icons'
 import { LoopEnvelope } from './components/LoopEnvelope'
-import { PracticePanel } from './components/PracticePanel'
+import { NotesSection } from './components/NotesSection'
+import { PomodoroSection } from './components/PomodoroSection'
+import { RecordingsSection } from './components/RecordingsSection'
+import { SettingsShelf } from './components/SettingsShelf'
 import { ShortcutsPanel } from './components/ShortcutsPanel'
+import { SideDrawer, SideRail, type RailItem } from './components/SideRail'
 import { TransportBar } from './components/TransportBar'
 import { Button } from './components/ui'
 import { WelcomeScreen } from './components/WelcomeScreen'
@@ -14,11 +18,16 @@ import { useRecorder } from './player/useRecorder'
 import { useShortcuts } from './player/useShortcuts'
 
 type Theme = 'dark' | 'light'
+type RightTool = 'pomodoro' | 'recordings'
+
+const recordingRed = '#ff8a7d'
 
 function App() {
   const [theme, setTheme] = useState<Theme>('dark')
   const [showHelp, setShowHelp] = useState(false)
-  const [panelOpen, setPanelOpen] = useState(false)
+  const [shelfOpen, setShelfOpen] = useState(false)
+  const [notesOpen, setNotesOpen] = useState(false)
+  const [rightTool, setRightTool] = useState<RightTool | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const player = useAlphaTab(containerRef, scrollRef)
@@ -59,6 +68,8 @@ function App() {
   const { info, status, error } = player
   const hasScore = info !== null
   const canPlay = hasScore && player.playerReady && status === 'ready'
+  const recording = recorder.state === 'recording'
+  const toggleRightTool = (tool: RightTool) => setRightTool((current) => (current === tool ? null : tool))
 
   useShortcuts(
     {
@@ -69,22 +80,71 @@ function App() {
       toggleMetronome: player.toggleMetronome,
       changeSpeed: player.changeSpeed,
       toggleRecording: recorder.toggle,
-      togglePanel: () => setPanelOpen((v) => !v),
+      togglePanel: () => setShelfOpen((v) => !v),
       toggleHelp: () => setShowHelp((v) => !v),
       closeOverlay: () => {
-        if (showHelp) {
-          setShowHelp(false)
-          return true
-        }
-        if (panelOpen) {
-          setPanelOpen(false)
-          return true
-        }
-        return false
+        if (showHelp) setShowHelp(false)
+        else if (rightTool) setRightTool(null)
+        else if (notesOpen) setNotesOpen(false)
+        else if (shelfOpen) setShelfOpen(false)
+        else return false
+        return true
       },
     },
     canPlay,
   )
+
+  const leftItems: RailItem[] = [
+    {
+      id: 'notes',
+      label: 'Notlar',
+      title: 'Parça ve loop notları',
+      icon: <NoteIcon />,
+      active: notesOpen,
+      onClick: () => setNotesOpen((v) => !v),
+      badge:
+        notes.loopNotes.length > 0 ? (
+          <span className="font-mono text-[0.7rem] leading-none text-muted">{notes.loopNotes.length}</span>
+        ) : undefined,
+    },
+  ]
+
+  const rightItems: RailItem[] = [
+    {
+      id: 'pomodoro',
+      label: 'Pomodoro',
+      title: 'Pomodoro sayacı',
+      icon: <TimerIcon />,
+      active: rightTool === 'pomodoro',
+      onClick: () => toggleRightTool('pomodoro'),
+      badge: (
+        <span
+          className={`led text-[0.72rem] leading-none ${pomodoro.phase === 'break' ? 'led-break' : ''} ${
+            pomodoro.running ? '' : 'opacity-60'
+          }`}
+        >
+          {formatClock(pomodoro.remainingMs)}
+        </span>
+      ),
+    },
+    {
+      id: 'recordings',
+      label: 'Kayıt',
+      title: 'Ses kayıtları',
+      icon: <MicIcon />,
+      active: rightTool === 'recordings',
+      onClick: () => toggleRightTool('recordings'),
+      badge: recording ? (
+        <span className="led text-[0.72rem] leading-none" style={{ color: recordingRed }}>
+          {formatClock(recorder.elapsedMs)}
+        </span>
+      ) : recorder.recordings.length > 0 ? (
+        <span className="font-mono text-[0.7rem] leading-none text-muted">{recorder.recordings.length}</span>
+      ) : undefined,
+    },
+  ]
+
+  const noScoreHint = <p className="px-5 py-4 text-sm text-muted">Bir dosya açınca burada kullanabilirsin.</p>
 
   return (
     <div className="flex h-svh flex-col bg-bg text-ink">
@@ -172,9 +232,11 @@ function App() {
         </div>
       )}
 
-      {/* overflow-hidden clips the closed drawer so it never slides over the transport bar. */}
+      {/* overflow-hidden clips closed drawers so they never slide over the rails or the transport. */}
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
-        <main ref={scrollRef} className="relative min-h-0 flex-1 overflow-auto">
+        <SideRail side="left" items={leftItems} />
+
+        <main ref={scrollRef} className="relative min-h-0 min-w-0 flex-1 overflow-auto">
           {!hasScore && status !== 'loading' && <WelcomeScreen onFile={openFile} />}
           {status === 'loading' && (
             <div className="flex h-full items-center justify-center gap-3 font-display text-xl tracking-[0.14em] text-muted uppercase">
@@ -195,34 +257,39 @@ function App() {
           </div>
         </main>
 
-        {/* The drawer floats over the score, so opening it never changes the notation width (which would force an alphaTab re-layout). */}
-        <aside
-          id="settings-panel"
-          aria-label="Ayarlar"
-          inert={!panelOpen}
-          className={`absolute inset-x-0 bottom-0 z-[1100] flex max-h-[75%] flex-col rounded-t-2xl border-t border-line bg-surface shadow-[0_-12px_40px_rgb(0_0_0/0.45)] transition-transform duration-200 ease-out lg:inset-y-0 lg:right-0 lg:left-auto lg:max-h-none lg:w-[26rem] lg:rounded-none lg:border-t-0 lg:border-l lg:shadow-[-12px_0_40px_rgb(0_0_0/0.45)] ${
-            panelOpen ? 'translate-y-0 lg:translate-x-0' : 'translate-y-full lg:translate-x-full lg:translate-y-0'
-          }`}
+        <SideRail side="right" items={rightItems} />
+
+        <SideDrawer side="left" open={notesOpen} title="Notlar" onClose={() => setNotesOpen(false)}>
+          {hasScore ? <NotesSection player={player} notes={notes} /> : noScoreHint}
+        </SideDrawer>
+
+        <SideDrawer
+          side="right"
+          open={rightTool !== null}
+          title={rightTool === 'recordings' ? 'Kayıtlar' : 'Pomodoro'}
+          onClose={() => setRightTool(null)}
         >
-          <PracticePanel
-            player={player}
-            pomodoro={pomodoro}
-            notes={notes}
-            recorder={recorder}
-            disabled={!hasScore}
-            onClose={() => setPanelOpen(false)}
-          />
-        </aside>
+          {rightTool === 'recordings' ? (
+            hasScore ? (
+              <RecordingsSection recorder={recorder} songTitle={info?.title ?? ''} />
+            ) : (
+              noScoreHint
+            )
+          ) : (
+            <PomodoroSection pomodoro={pomodoro} />
+          )}
+        </SideDrawer>
       </div>
+
+      {shelfOpen && <SettingsShelf player={player} disabled={!hasScore} onClose={() => setShelfOpen(false)} />}
 
       <TransportBar
         player={player}
-        pomodoro={pomodoro}
         recorder={recorder}
         canPlay={canPlay}
         statusMessage={statusText(player)}
-        panelOpen={panelOpen}
-        onTogglePanel={() => setPanelOpen((v) => !v)}
+        shelfOpen={shelfOpen}
+        onToggleShelf={() => setShelfOpen((v) => !v)}
       />
 
       {showHelp && <ShortcutsPanel onClose={() => setShowHelp(false)} />}

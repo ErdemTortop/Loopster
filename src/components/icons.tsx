@@ -89,6 +89,33 @@ export function FolderIcon({ className = 'size-5' }: IconProps) {
   )
 }
 
+export function NoteIcon({ className = 'size-6' }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} {...stroke}>
+      <path d="M5 4h10l4 4v12H5z" />
+      <path d="M14 4v5h5M8 13h8M8 17h5" />
+    </svg>
+  )
+}
+
+export function TimerIcon({ className = 'size-6' }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} {...stroke}>
+      <circle cx="12" cy="13" r="8" />
+      <path d="M12 9v4l2.5 2.5M9 2h6" />
+    </svg>
+  )
+}
+
+export function MicIcon({ className = 'size-6' }: IconProps) {
+  return (
+    <svg viewBox="0 0 24 24" aria-hidden="true" className={className} {...stroke}>
+      <rect x="9" y="2" width="6" height="12" rx="3" />
+      <path d="M5 11a7 7 0 0 0 14 0M12 18v4M8 22h8" />
+    </svg>
+  )
+}
+
 export function KeyboardIcon({ className = 'size-5' }: IconProps) {
   return (
     <svg viewBox="0 0 24 24" aria-hidden="true" className={className} {...stroke}>

@@ -16,6 +16,9 @@ Zor bölümü loop'a al, yavaşlat, metronomla çal, hızı kademeli olarak art�
 
 ### Pratik araçları
 
+Ekran düzeni: solda **Notlar**, sağda **Pomodoro** ve **Kayıt** düğmeleri; tıklayınca o kenardan panel açılır.
+Tempo, metronom, kademeli hızlanma, loop, parçalar ve transpoze alt çubuktaki **Ayarlar** (P) ile açılan rafta.
+
 - **Tempo:** %25–%150 arası hız. Gerçek BPM hesaplanıp gösterilir; %50 / %75 / %100 hızlı düğmeleri.
 - **Metronom** ve ses seviyesi. **Giriş sayımı** açıksa Çal'a basınca bir ölçü sayar.
 - **Loop zarfı:** Guitar Pro'daki gibi notanın üzerinde bir kutu, tam ölçü sınırlarında döner. Fareyle ölçülerin
@@ -42,7 +45,7 @@ Zor bölümü loop'a al, yavaşlat, metronomla çal, hızı kademeli olarak art�
 | M | Metronom aç / kapa |
 | − / + | Hızı %5 azalt / artır |
 | R | Kayda başla / durdur |
-| P | Ayarlar panelini aç / kapa |
+| P | Alttaki ayarları aç / kapa |
 | ? | Kısayol listesi |
 
 ## Geliştirme

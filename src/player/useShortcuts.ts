@@ -16,13 +16,13 @@ export interface ShortcutActions {
 
 export const SHORTCUTS: { keys: string[]; label: string }[] = [
   { keys: ['Boşluk'], label: 'Çal / duraklat' },
-  { keys: ['Esc'], label: 'Durdur (açık bir panel varsa önce onu kapatır)' },
+  { keys: ['Esc'], label: 'Durdur (açık bir panel ya da ayarlar varsa önce onları kapatır)' },
   { keys: ['←', '→'], label: 'Bir ölçü geri / ileri' },
   { keys: ['L'], label: 'Loop aç / kapa' },
   { keys: ['M'], label: 'Metronom aç / kapa' },
   { keys: ['−', '+'], label: 'Hızı %5 azalt / artır' },
   { keys: ['R'], label: 'Kayda başla / durdur' },
-  { keys: ['P'], label: 'Ayarlar panelini aç / kapa' },
+  { keys: ['P'], label: 'Alttaki ayarları aç / kapa' },
   { keys: ['?'], label: 'Kısayol listesini aç / kapa' },
 ]
 

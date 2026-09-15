@@ -1,77 +1,38 @@
+import type { ReactNode } from 'react'
 import { SPEED_MAX, SPEED_MIN, type Player } from '../player/useAlphaTab'
-import type { Notes } from '../player/useNotes'
-import { formatClock, type Pomodoro } from '../player/usePomodoro'
-import type { Recorder } from '../player/useRecorder'
-import { NotesSection } from './NotesSection'
-import { RecordingsSection } from './RecordingsSection'
 import { Button, LedDot, NumberField, Readout, Section, Toggle } from './ui'
 
 const hintClass = 'text-sm text-muted'
 
 interface Props {
   player: Player
-  pomodoro: Pomodoro
-  notes: Notes
-  recorder: Recorder
   disabled: boolean
   onClose: () => void
 }
 
-export function PracticePanel({ player, pomodoro, notes, recorder, disabled, onClose }: Props) {
+/**
+ * Practice settings in columns above the transport. Opening it only shortens the score area;
+ * the notation width stays the same, so alphaTab does not re-layout.
+ */
+export function SettingsShelf({ player, disabled, onClose }: Props) {
   const { info, speed, metronome, loop, trainer, round, transpose } = player
 
   return (
-    <div className="flex h-full min-h-0 flex-col">
-      <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3">
-        <h2 className="font-display text-xl font-semibold tracking-[0.12em] uppercase">Ayarlar</h2>
+    <section id="settings-shelf" aria-label="Ayarlar" className="relative z-40 border-t border-line bg-surface">
+      <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-2">
+        <h2 className="font-display text-lg font-semibold tracking-[0.12em] uppercase">Ayarlar</h2>
         <Button onClick={onClose}>Kapat</Button>
       </div>
 
-      <div className="min-h-0 flex-1 divide-y divide-line overflow-y-auto">
-        {/* The timer works without a score, so it sits outside the disabled fieldset. */}
-        <Section title="Pomodoro">
-          <div className="flex items-center gap-3">
-            <Readout label={pomodoro.phase === 'break' ? 'Mola' : 'Odak'} className="flex-1">
-              <span className={pomodoro.phase === 'break' ? 'led-break' : ''}>{formatClock(pomodoro.remainingMs)}</span>
-            </Readout>
-            <Readout label="Tamamlanan" className="w-32">
-              {pomodoro.completed}
-            </Readout>
-          </div>
-          <div className="grid grid-cols-2 gap-2">
-            <Toggle on={pomodoro.running} onClick={pomodoro.toggle}>
-              {pomodoro.running ? 'Duraklat' : pomodoro.phase === 'idle' ? 'Başlat' : 'Devam et'}
-            </Toggle>
-            <Button onClick={pomodoro.reset}>Sıfırla</Button>
-          </div>
-          <div className="flex flex-wrap items-end gap-3">
-            <NumberField
-              label="Odak (dk)"
-              value={pomodoro.settings.workMin}
-              min={1}
-              max={180}
-              onCommit={(v) => pomodoro.setSettings({ workMin: v })}
-            />
-            <NumberField
-              label="Mola (dk)"
-              value={pomodoro.settings.breakMin}
-              min={1}
-              max={180}
-              onCommit={(v) => pomodoro.setSettings({ breakMin: v })}
-            />
-          </div>
-          <p className={hintClass}>
-            Odak süresi bitince çalma durur, zil çalar ve mola başlar. Mola bitince yeni turu sen başlatırsın.
-          </p>
-        </Section>
+      <fieldset
+        disabled={disabled}
+        className="grid max-h-[40svh] min-w-0 grid-cols-1 gap-px overflow-y-auto bg-line sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6"
+      >
+        {disabled && (
+          <p className={`col-span-full bg-surface px-5 py-3 ${hintClass}`}>Ayarlar bir dosya açınca etkinleşir.</p>
+        )}
 
-        <fieldset disabled={disabled} className="min-w-0 divide-y divide-line">
-          {disabled && <p className={`px-5 py-4 ${hintClass}`}>Diğer ayarlar bir dosya açınca etkinleşir.</p>}
-
-          <NotesSection player={player} notes={notes} />
-
-          <RecordingsSection recorder={recorder} songTitle={info?.title ?? ''} />
-
+        <Cell>
           <Section title="Tempo">
             <div className="flex items-center gap-3">
               <Readout label="Hız" className="flex-1">
@@ -99,13 +60,19 @@ export function PracticePanel({ player, pomodoro, notes, recorder, disabled, onC
               ))}
             </div>
           </Section>
+        </Cell>
 
+        <Cell>
           <Section title="Metronom">
             <div className="grid grid-cols-2 gap-2">
               <Toggle on={metronome.enabled} onClick={player.toggleMetronome}>
                 Metronom
               </Toggle>
-              <Toggle on={player.countIn} onClick={() => player.setCountIn(!player.countIn)}>
+              <Toggle
+              on={player.countIn}
+              onClick={() => player.setCountIn(!player.countIn)}
+              title="Çal'a basınca bir ölçü boyunca metronom sayar"
+            >
                 Giriş sayımı
               </Toggle>
             </div>
@@ -121,9 +88,10 @@ export function PracticePanel({ player, pomodoro, notes, recorder, disabled, onC
               />
               <span className="led w-10 text-right">{Math.round(metronome.volume * 100)}</span>
             </label>
-            <p className={hintClass}>Giriş sayımı, Çal'a basınca bir ölçü boyunca metronom sayar.</p>
           </Section>
+        </Cell>
 
+        <Cell>
           <Section title="Kademeli hızlanma">
             <Toggle on={trainer.enabled} onClick={() => player.setTrainer({ enabled: !trainer.enabled })} className="w-full">
               {trainer.enabled ? 'Açık' : 'Kapalı'}
@@ -140,36 +108,28 @@ export function PracticePanel({ player, pomodoro, notes, recorder, disabled, onC
               />
             </div>
             {trainer.enabled && (
-              <div className="rounded-lg border border-line bg-bg/60 p-3">
-                {!loop.enabled ? (
-                  <p className={hintClass}>Kademeli hızlanma loop açıkken çalışır.</p>
-                ) : (
-                  <>
-                    <p className="font-display text-lg font-semibold tracking-wide uppercase">
-                      Tur <span className="led">{round}</span> · Hız <span className="led">%{speed}</span>
-                    </p>
-                    <p className={hintClass}>
-                      {speed >= trainer.targetPct
-                        ? 'Hedef hıza ulaşıldı, bu hızda devam ediyor.'
-                        : `Sonraki artışa ${trainer.everyN - (round % trainer.everyN)} tur`}
-                    </p>
-                  </>
-                )}
-              </div>
+              <p className={hintClass}>
+                {!loop.enabled
+                  ? 'Loop açıkken çalışır.'
+                  : speed >= trainer.targetPct
+                    ? `Tur ${round} · hedef hıza ulaşıldı.`
+                    : `Tur ${round} · sonraki artışa ${trainer.everyN - (round % trainer.everyN)} tur`}
+              </p>
             )}
           </Section>
+        </Cell>
 
+        <Cell>
           <Section title="Loop">
             <Button onClick={player.toggleLoop} aria-pressed={loop.enabled} className="w-full justify-start">
               <LedDot on={loop.enabled} />
               {loop.enabled ? `Açık · ${loop.start + 1}–${loop.end + 1}. ölçüler` : 'Kapalı'}
             </Button>
-            <p className={hintClass}>
-              Notada ölçülerin üzerinden fareyle sürükleyerek zarf oluştur. Kenarlarındaki tutamaçları çekerek genişlet
-              ya da daralt (tablette parmakla da olur). Loop'u açınca bulunduğun yerde 4 ölçülük bir zarf belirir.
-            </p>
+            <p className={hintClass}>Notada ölçüleri sürükle, zarfı kenarlarından ayarla.</p>
           </Section>
+        </Cell>
 
+        <Cell>
           <Section title="Parçalar">
             {info && info.tracks.length > 0 ? (
               <ul className="space-y-2">
@@ -189,7 +149,9 @@ export function PracticePanel({ player, pomodoro, notes, recorder, disabled, onC
               <p className={hintClass}>Dosya açınca parçalar burada listelenir.</p>
             )}
           </Section>
+        </Cell>
 
+        <Cell>
           <Section title="Transpoze">
             <div className="flex items-center gap-2">
               <Button onClick={() => player.changeTranspose(-1)} aria-label="Yarım ses aşağı" className="w-12 text-xl">
@@ -201,14 +163,22 @@ export function PracticePanel({ player, pomodoro, notes, recorder, disabled, onC
               <Button onClick={() => player.changeTranspose(1)} aria-label="Yarım ses yukarı" className="w-12 text-xl">
                 +
               </Button>
-              <Button onClick={() => player.setTranspose(0)} disabled={disabled || transpose === 0}>
-                Sıfırla
-              </Button>
             </div>
-            <p className={hintClass}>Sadece ses kayar, tab aynı kalır. Örneğin yarım ses düşük akort için −1.</p>
+            <Button
+              onClick={() => player.setTranspose(0)}
+              disabled={disabled || transpose === 0}
+              title="Sadece ses kayar, tab aynı kalır"
+              className="w-full"
+            >
+              Sıfırla
+            </Button>
           </Section>
-        </fieldset>
-      </div>
-    </div>
+        </Cell>
+      </fieldset>
+    </section>
   )
+}
+
+function Cell({ children }: { children: ReactNode }) {
+  return <div className="min-w-0 bg-surface">{children}</div>
 }
