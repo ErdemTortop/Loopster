@@ -19,6 +19,8 @@ Durumlar: **bekliyor** · **planlandı (Faz N)** · **yapıldı** · **vazgeçil
 | Loop'a hazırlık payı + "Zorlandım" düğmesi | yapıldı | Loop'tan önce bir ölçü giriş; tek dokunuşla hızı %5 düşür ve tur sayacını sıfırla |
 | Parça ses seviyeleri | yapıldı | Her enstrüman için ses kaydırıcısı (sustur/solo'ya ek) |
 | Kaydı tab ile birlikte dinleme | yapıldı | Tab çalarken yapılan kayıtlar; tempo, loop ve hız değişimleri tekrarlanır; Kayıt ↔ Tab dengesi ve gecikme kaydırma |
+| Masaüstü uygulaması (Electron) | yapıldı | Aynı koddan masaüstü kabuğu; mikrofon izni kalıcı, pencere kendi başına |
+| Egzersiz klasörü kütüphanesi | yapıldı | Masaüstünde bir klasör seç, içindeki tüm tab dosyaları listeden tek tıkla açılır; klasör hatırlanır |
 | Uygulama olarak kurma (PWA) | bekliyor | Yayından sonra kurulabilir ve internetsiz çalışır; Faz 4 yayın adımıyla birlikte |
 | Ses kaydetme ve kaydı dinleme | yapıldı | Mikrofonla kayıt; parça bazında liste, dinle / sil / indir; tarayıcıda saklanır |
 

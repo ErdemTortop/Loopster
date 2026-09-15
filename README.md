@@ -33,6 +33,9 @@ Tempo, metronom, kademeli hızlanma, loop, parçalar ve transpoze alt çubuktaki
 - **Görünüm:** "Sadece tab" nota satırını gizler (davul gibi tabı olmayan partiler notayla kalır); nota büyüklüğü
   %60–%200 arası ayarlanır. İkisi de hatırlanır.
 - **Transpoze:** yarım ses adımlarla, sadece ses kayar (tab aynı kalır). Kapo ya da düşük akort için.
+- **Egzersiz klasörü (sadece masaüstü):** bir klasör seçersin, içindeki tüm Guitar Pro dosyaları sol raftaki
+  **Kütüphane** panelinde alt klasörlerine göre gruplanmış olarak listelenir; tek tıkla açılır, arama kutusu vardır.
+  Seçtiğin klasör hatırlanır, uygulamayı kapatıp açınca yine oradadır.
 - **Notlar:** her parça için genel bir not ve loop aralıklarına bağlı notlar (ör. "33–40: 3. parmak kayıyor").
   Bir loop notuna tıklayınca o loop açılır. Notlar tarayıcıda, dosya içeriğine göre saklanır; dosyanın adı değişse de kaybolmaz.
 - **Ses kaydı:** mikrofonla kendi çalışını kaydet (kırmızı düğme ya da R). Kayıtlar parça bazında tarih, tempo ve loop
@@ -73,10 +76,32 @@ npm run build
 npm run preview
 ```
 
+## Masaüstü uygulaması
+
+Aynı koddan hem tarayıcı sürümü hem de Electron tabanlı bir masaüstü uygulaması çıkar. Masaüstü sürümünde
+egzersiz klasörü kütüphanesi vardır, mikrofon izni her açılışta tekrar sorulmaz ve pencere kendi başınadır.
+
+```bash
+npm run desktop
+```
+
+Geliştirirken, ayrı bir terminalde `npm run dev` çalışırken:
+
+```bash
+npm run desktop:dev
+```
+
+Windows kurulum dosyası üretmek için (çıktı `release/` klasörüne yazılır):
+
+```bash
+npm run desktop:build
+```
+
 ## Teknolojiler
 
 - [alphaTab](https://alphatab.net): Guitar Pro dosyalarını okuma, nota/tab gösterimi ve MIDI çalma
 - React, TypeScript, Vite, Tailwind CSS
+- Electron (masaüstü sürümü)
 
 ## Lisans
 

@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { FileDropZone } from './components/FileDropZone'
-import { KeyboardIcon, MicIcon, MoonIcon, NoteIcon, SunIcon, TimerIcon } from './components/icons'
+import { FolderIcon, KeyboardIcon, MicIcon, MoonIcon, NoteIcon, SunIcon, TimerIcon } from './components/icons'
+import { LibrarySection } from './components/LibrarySection'
 import { LoopEnvelope } from './components/LoopEnvelope'
 import { NotesSection } from './components/NotesSection'
 import { PomodoroSection } from './components/PomodoroSection'
@@ -12,6 +13,7 @@ import { TransportBar } from './components/TransportBar'
 import { Button } from './components/ui'
 import { WelcomeScreen } from './components/WelcomeScreen'
 import { useAlphaTab, type Player } from './player/useAlphaTab'
+import { useLibrary } from './player/useLibrary'
 import { useNotes } from './player/useNotes'
 import { usePlayAlong } from './player/usePlayAlong'
 import { formatClock, usePomodoro } from './player/usePomodoro'
@@ -19,6 +21,7 @@ import { useRecorder } from './player/useRecorder'
 import { useShortcuts } from './player/useShortcuts'
 
 type Theme = 'dark' | 'light'
+type LeftTool = 'notes' | 'library'
 type RightTool = 'pomodoro' | 'recordings'
 
 const recordingRed = '#ff8a7d'
@@ -27,7 +30,7 @@ function App() {
   const [theme, setTheme] = useState<Theme>('dark')
   const [showHelp, setShowHelp] = useState(false)
   const [shelfOpen, setShelfOpen] = useState(false)
-  const [notesOpen, setNotesOpen] = useState(false)
+  const [leftTool, setLeftTool] = useState<LeftTool | null>(null)
   const [rightTool, setRightTool] = useState<RightTool | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
@@ -66,6 +69,8 @@ function App() {
     },
     [stopPlayAlong, stopRecording, loadFile],
   )
+  // Desktop only: the folder of tab files the user practises from.
+  const library = useLibrary(openFile)
 
   useEffect(() => {
     document.documentElement.classList.toggle('light', theme === 'light')
@@ -75,6 +80,7 @@ function App() {
   const hasScore = info !== null
   const canPlay = hasScore && player.playerReady && status === 'ready'
   const recording = recorder.state === 'recording'
+  const toggleLeftTool = (tool: LeftTool) => setLeftTool((current) => (current === tool ? null : tool))
   const toggleRightTool = (tool: RightTool) => setRightTool((current) => (current === tool ? null : tool))
 
   useShortcuts(
@@ -92,7 +98,7 @@ function App() {
       closeOverlay: () => {
         if (showHelp) setShowHelp(false)
         else if (rightTool) setRightTool(null)
-        else if (notesOpen) setNotesOpen(false)
+        else if (leftTool) setLeftTool(null)
         else if (shelfOpen) setShelfOpen(false)
         else return false
         return true
@@ -101,14 +107,31 @@ function App() {
     canPlay,
   )
 
+  const libraryItems = library.snapshot?.items.length ?? 0
   const leftItems: RailItem[] = [
+    ...(library.supported
+      ? [
+          {
+            id: 'library',
+            label: 'Kütüphane',
+            title: 'Egzersiz klasöründeki parçalar',
+            icon: <FolderIcon className="size-6" />,
+            active: leftTool === 'library',
+            onClick: () => toggleLeftTool('library'),
+            badge:
+              libraryItems > 0 ? (
+                <span className="font-mono text-[0.7rem] leading-none text-muted">{libraryItems}</span>
+              ) : undefined,
+          } satisfies RailItem,
+        ]
+      : []),
     {
       id: 'notes',
       label: 'Notlar',
       title: 'Parça ve loop notları',
       icon: <NoteIcon />,
-      active: notesOpen,
-      onClick: () => setNotesOpen((v) => !v),
+      active: leftTool === 'notes',
+      onClick: () => toggleLeftTool('notes'),
       badge:
         notes.loopNotes.length > 0 ? (
           <span className="font-mono text-[0.7rem] leading-none text-muted">{notes.loopNotes.length}</span>
@@ -266,8 +289,19 @@ function App() {
 
         <SideRail side="right" items={rightItems} />
 
-        <SideDrawer side="left" open={notesOpen} title="Notlar" onClose={() => setNotesOpen(false)}>
-          {hasScore ? <NotesSection player={player} notes={notes} /> : noScoreHint}
+        <SideDrawer
+          side="left"
+          open={leftTool !== null}
+          title={leftTool === 'library' ? 'Kütüphane' : 'Notlar'}
+          onClose={() => setLeftTool(null)}
+        >
+          {leftTool === 'library' ? (
+            <LibrarySection library={library} />
+          ) : hasScore ? (
+            <NotesSection player={player} notes={notes} />
+          ) : (
+            noScoreHint
+          )}
         </SideDrawer>
 
         <SideDrawer
