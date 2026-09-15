@@ -20,4 +20,12 @@ contextBridge.exposeInMainWorld('loopster', {
       return () => ipcRenderer.removeListener('file:open', handler)
     },
   },
+  recordings: {
+    folder: () => ipcRenderer.invoke('recordings:folder'),
+    list: (songId) => ipcRenderer.invoke('recordings:list', songId),
+    save: (take) => ipcRenderer.invoke('recordings:save', take),
+    read: (filePath) => ipcRenderer.invoke('recordings:read', filePath),
+    remove: (filePath, metaPath) => ipcRenderer.invoke('recordings:delete', filePath, metaPath),
+    reveal: (filePath) => ipcRenderer.invoke('recordings:reveal', filePath),
+  },
 })

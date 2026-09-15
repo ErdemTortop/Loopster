@@ -38,6 +38,7 @@ function App() {
   const player = useAlphaTab(containerRef, scrollRef)
   const recorder = useRecorder({
     songId: player.songId,
+    songTitle: player.info?.title ?? '',
     getContext: () => ({
       speed: player.speed,
       bpm: player.info ? Math.round((player.info.tempo * player.speed) / 100) : null,

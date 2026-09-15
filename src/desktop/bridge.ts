@@ -22,11 +22,38 @@ export interface OpenedFile {
   data: Uint8Array
 }
 
+/** A take stored as a file on disk, described by its sidecar JSON. */
+export interface StoredTake {
+  id: string
+  songId: string
+  title: string
+  createdAt: number
+  durationMs: number
+  mimeType: string
+  speed: number
+  bpm: number | null
+  loopStart: number | null
+  loopEnd: number | null
+  sync?: unknown
+  audio: string
+  path: string
+  metaPath: string
+  size?: number
+}
+
 interface DesktopApi {
   desktop: true
   file: {
     pending: () => Promise<OpenedFile | null>
     onOpen: (listener: (file: OpenedFile) => void) => () => void
+  }
+  recordings: {
+    folder: () => Promise<string>
+    list: (songId: string) => Promise<StoredTake[]>
+    save: (take: Record<string, unknown>) => Promise<StoredTake>
+    read: (path: string) => Promise<Uint8Array>
+    remove: (path: string, metaPath?: string) => Promise<boolean>
+    reveal: (path: string) => Promise<boolean>
   }
   library: {
     pick: () => Promise<LibrarySnapshot | null>

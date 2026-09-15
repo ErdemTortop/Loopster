@@ -126,7 +126,115 @@ async function openLibrary(root) {
   return scan(root)
 }
 
+const RECORDINGS_FOLDER = 'Loopster Kayıtları'
+
+/** Documents/Loopster Kayıtları, created on first use. Takes are normal files the user can keep. */
+async function recordingsFolder() {
+  const dir = path.join(app.getPath('documents'), RECORDINGS_FOLDER)
+  await fs.mkdir(dir, { recursive: true })
+  return dir
+}
+
+function slug(text) {
+  return (text || '')
+    .normalize('NFKD')
+    .replace(/[^a-zA-Z0-9]+/g, '-')
+    .replace(/^-+|-+$/g, '')
+    .toLowerCase()
+    .slice(0, 40)
+}
+
+function extensionFor(mimeType) {
+  if ((mimeType || '').includes('ogg')) return '.ogg'
+  if ((mimeType || '').includes('mp4')) return '.m4a'
+  return '.webm'
+}
+
+function timestamp(ms) {
+  const d = new Date(ms)
+  const pad = (n) => String(n).padStart(2, '0')
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}_${pad(d.getHours())}-${pad(d.getMinutes())}-${pad(d.getSeconds())}`
+}
+
+/** Keeps a stale path from reaching anything outside the recordings folder. */
+async function insideRecordings(filePath) {
+  const dir = path.resolve(await recordingsFolder())
+  const full = path.resolve(filePath)
+  if (!full.startsWith(dir + path.sep)) throw new Error('Dosya kayıt klasörünün dışında.')
+  return full
+}
+
+function registerRecordingIpc() {
+  ipcMain.handle('recordings:folder', () => recordingsFolder())
+
+  ipcMain.handle('recordings:list', async (_event, songId) => {
+    const dir = await recordingsFolder()
+    const names = await fs.readdir(dir)
+    const takes = []
+    for (const name of names) {
+      if (!name.endsWith('.json')) continue
+      try {
+        const meta = JSON.parse(await fs.readFile(path.join(dir, name), 'utf8'))
+        if (songId && meta.songId !== songId) continue
+        const audioPath = path.join(dir, meta.audio)
+        const stat = await fs.stat(audioPath)
+        takes.push({ ...meta, path: audioPath, metaPath: path.join(dir, name), size: stat.size })
+      } catch {
+        // A half-written or hand-edited sidecar is skipped rather than breaking the list.
+      }
+    }
+    return takes.sort((a, b) => b.createdAt - a.createdAt)
+  })
+
+  ipcMain.handle('recordings:save', async (_event, take) => {
+    const dir = await recordingsFolder()
+    const extension = extensionFor(take.mimeType)
+    const base = `${slug(take.title) || 'kayit'}-${timestamp(take.createdAt)}`
+    let name = base
+    for (let i = 2; ; i += 1) {
+      try {
+        await fs.access(path.join(dir, `${name}${extension}`))
+        name = `${base}-${i}`
+      } catch {
+        break
+      }
+    }
+    const audio = `${name}${extension}`
+    await fs.writeFile(path.join(dir, audio), Buffer.from(take.data))
+    const meta = { ...take, audio, data: undefined }
+    delete meta.data
+    await fs.writeFile(path.join(dir, `${name}.json`), JSON.stringify(meta, null, 2), 'utf8')
+    return { ...meta, path: path.join(dir, audio), metaPath: path.join(dir, `${name}.json`) }
+  })
+
+  ipcMain.handle('recordings:read', async (_event, filePath) => {
+    const full = await insideRecordings(filePath)
+    return new Uint8Array(await fs.readFile(full))
+  })
+
+  // Deleted takes go to the recycle bin, so a mis-click is recoverable.
+  ipcMain.handle('recordings:delete', async (_event, filePath, metaPath) => {
+    const audio = await insideRecordings(filePath)
+    await shell.trashItem(audio)
+    if (metaPath) {
+      try {
+        await shell.trashItem(await insideRecordings(metaPath))
+      } catch {
+        // The audio is gone; a leftover sidecar is only skipped in the listing.
+      }
+    }
+    return true
+  })
+
+  ipcMain.handle('recordings:reveal', async (_event, filePath) => {
+    shell.showItemInFolder(await insideRecordings(filePath))
+    return true
+  })
+}
+
 function registerIpc(getWindow) {
+  registerRecordingIpc()
+
   // The renderer asks once on start-up: a file the app was launched with, if any.
   ipcMain.handle('file:pending', async () => {
     const filePath = pendingFile

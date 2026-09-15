@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
 import { urlFor, type Recording } from '../player/recordingsDb'
+import { recordingsStore } from '../player/recordingsStore'
 import { NUDGE_LIMIT_MS, type PlayAlong } from '../player/usePlayAlong'
 import { formatClock } from '../player/usePomodoro'
 import type { Recorder } from '../player/useRecorder'
@@ -35,6 +36,17 @@ const smallLabelClass = 'font-display text-xs font-semibold tracking-[0.14em] te
 export function RecordingsSection({ recorder, playAlong, songTitle }: Props) {
   const recording = recorder.state === 'recording'
   const anySynced = recorder.recordings.some((take) => take.sync)
+  const [folder, setFolder] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (!recordingsStore.onDisk) return
+    recordingsStore
+      .folder()
+      .then(setFolder)
+      .catch(() => {
+        // Only the hint text is missing then.
+      })
+  }, [])
 
   return (
     <div className="space-y-3 px-5 py-4">
@@ -113,8 +125,10 @@ export function RecordingsSection({ recorder, playAlong, songTitle }: Props) {
       )}
 
       <p className="text-xs text-muted">
-        Kayıtlar bu tarayıcıda saklanır. Hoparlörden çalan tab da mikrofona girer; sadece kendi çalışını kaydetmek için
-        kulaklık kullan.
+        {recordingsStore.onDisk
+          ? `Kayıtlar dosya olarak ${folder ?? 'Belgeler klasöründe'} tutulur; silinenler geri dönüşüm kutusuna gider. `
+          : 'Kayıtlar bu tarayıcıda saklanır. '}
+        Hoparlörden çalan tab da mikrofona girer; sadece kendi çalışını kaydetmek için kulaklık kullan.
       </p>
     </div>
   )
@@ -133,7 +147,7 @@ function RecordingItem({ take, songTitle, playAlong, onDelete }: ItemProps) {
   const [confirming, setConfirming] = useState(false)
   const audioRef = useRef<HTMLAudioElement>(null)
   useKnownDuration(audioRef)
-  const url = urlFor(take.blob)
+  const url = useTakeUrl(take)
   const date = new Date(take.createdAt)
   const stamp = date.toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
   const fileName = `${slug(songTitle) || 'loopster'}-${date.toISOString().slice(0, 16).replace(/[:T]/g, '-')}.${extensionFor(take.mimeType)}`
@@ -152,7 +166,11 @@ function RecordingItem({ take, songTitle, playAlong, onDelete }: ItemProps) {
         <span className="font-display text-base font-semibold tracking-wide uppercase">{stamp}</span>
         <span className="font-mono text-xs text-muted">{details}</span>
       </div>
-      <audio ref={audioRef} controls preload="metadata" src={url} className="h-10 w-full" />
+      {url ? (
+        <audio ref={audioRef} controls preload="metadata" src={url} className="h-10 w-full" />
+      ) : (
+        <p className="text-sm text-muted">Ses dosyası okunuyor…</p>
+      )}
       {take.sync ? (
         <Toggle
           on={playingAlong || preparing}
@@ -166,9 +184,15 @@ function RecordingItem({ take, songTitle, playAlong, onDelete }: ItemProps) {
         <p className="text-xs text-muted">Tab çalmadan yapılmış; sadece tek başına dinlenebilir.</p>
       )}
       <div className="flex flex-wrap gap-2">
-        <a href={url} download={fileName} className={linkButtonClass}>
-          İndir
-        </a>
+        {recordingsStore.onDisk ? (
+          <Button onClick={() => void recordingsStore.reveal(take)}>Klasörde göster</Button>
+        ) : (
+          url && (
+            <a href={url} download={fileName} className={linkButtonClass}>
+              İndir
+            </a>
+          )
+        )}
         {confirming ? (
           <>
             <Button onClick={onDelete} className="border-danger text-danger">
@@ -182,6 +206,29 @@ function RecordingItem({ take, songTitle, playAlong, onDelete }: ItemProps) {
       </div>
     </li>
   )
+}
+
+/** The audio of a take: already in memory for a fresh one, read from disk for an older desktop take. */
+function useTakeUrl(take: Recording): string | null {
+  const [diskUrl, setDiskUrl] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (take.blob) return
+    let cancelled = false
+    recordingsStore
+      .blobFor(take)
+      .then((blob) => {
+        if (!cancelled) setDiskUrl(urlFor(blob))
+      })
+      .catch(() => {
+        // Leaves the "reading" line in place; the file is missing or unreadable.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [take])
+
+  return take.blob ? urlFor(take.blob) : diskUrl
 }
 
 /**

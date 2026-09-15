@@ -25,7 +25,11 @@ export interface Recording {
   createdAt: number
   durationMs: number
   mimeType: string
-  blob: Blob
+  /** In the browser the audio is always here; on the desktop it is read from `path` when needed. */
+  blob?: Blob
+  /** Desktop only: where the take and its sidecar live on disk. */
+  path?: string
+  metaPath?: string
   speed: number
   bpm: number | null
   /** Zero-based loop bars at the time of recording, or null when no loop was active. */

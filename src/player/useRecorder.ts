@@ -1,12 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  addRecording,
-  deleteRecording,
-  listRecordings,
-  releaseUrl,
-  type Recording,
-  type RecordingSync,
-} from './recordingsDb'
+import type { Recording, RecordingSync } from './recordingsDb'
+import { recordingsStore } from './recordingsStore'
 import type { BeatEvent } from './useAlphaTab'
 
 export type RecorderState = 'idle' | 'requesting' | 'recording'
@@ -20,6 +14,8 @@ export interface RecordingContext {
 
 interface Options {
   songId: string | null
+  /** Used to name the file a desktop take is written to. */
+  songTitle: string
   /** Tempo and loop at the moment recording starts, stored with the take. */
   getContext: () => RecordingContext
   /** Called when "play the tab too" is on. */
@@ -96,7 +92,7 @@ function micErrorMessage(error: unknown): string {
 }
 
 /** Records the microphone per song and keeps the takes in IndexedDB. */
-export function useRecorder({ songId, getContext, onSyncStart, onSyncStop, subscribeBeat }: Options) {
+export function useRecorder({ songId, songTitle, getContext, onSyncStart, onSyncStop, subscribeBeat }: Options) {
   const supported = isSupported()
   const [state, setState] = useState<RecorderState>('idle')
   const [elapsedMs, setElapsedMs] = useState(0)
@@ -107,20 +103,27 @@ export function useRecorder({ songId, getContext, onSyncStart, onSyncStop, subsc
   const sessionRef = useRef<Session | null>(null)
   const startedAtRef = useRef(0)
   const levelBufferRef = useRef<Float32Array<ArrayBuffer> | null>(null)
-  const latest = useRef({ getContext, onSyncStart, onSyncStop, syncPlayback, subscribeBeat })
+  const latest = useRef({ getContext, onSyncStart, onSyncStop, syncPlayback, subscribeBeat, songTitle })
   useEffect(() => {
-    latest.current = { getContext, onSyncStart, onSyncStop, syncPlayback, subscribeBeat }
+    latest.current = { getContext, onSyncStart, onSyncStop, syncPlayback, subscribeBeat, songTitle }
   })
 
   useEffect(() => {
     if (!songId) return
     let cancelled = false
-    listRecordings(songId)
+    recordingsStore
+      .list(songId)
       .then((items) => {
         if (!cancelled) setLoaded({ songId, items })
       })
       .catch(() => {
-        if (!cancelled) setError('Kayıtlar okunamadı; tarayıcı depolaması kullanılamıyor olabilir.')
+        if (!cancelled) {
+          setError(
+            recordingsStore.onDisk
+              ? 'Kayıtlar okunamadı; kayıt klasörüne erişilemiyor olabilir.'
+              : 'Kayıtlar okunamadı; tarayıcı depolaması kullanılamıyor olabilir.',
+          )
+        }
       })
     return () => {
       cancelled = true
@@ -255,10 +258,14 @@ export function useRecorder({ songId, getContext, onSyncStart, onSyncStop, subsc
         sync: toSync(capture),
       }
       try {
-        await addRecording(take)
-        setLoaded((prev) => (prev.songId === takeSongId ? { songId: takeSongId, items: [take, ...prev.items] } : prev))
+        const saved = await recordingsStore.add(take, latest.current.songTitle)
+        setLoaded((prev) => (prev.songId === takeSongId ? { songId: takeSongId, items: [saved, ...prev.items] } : prev))
       } catch {
-        setError('Kayıt tarayıcıya kaydedilemedi; depolama alanı dolmuş olabilir.')
+        setError(
+          recordingsStore.onDisk
+            ? 'Kayıt diske yazılamadı; klasöre yazma izni ya da yeterli yer olmayabilir.'
+            : 'Kayıt tarayıcıya kaydedilemedi; depolama alanı dolmuş olabilir.',
+        )
       }
     }
 
@@ -307,8 +314,7 @@ export function useRecorder({ songId, getContext, onSyncStart, onSyncStop, subsc
 
   const remove = useCallback(async (recording: Recording) => {
     try {
-      await deleteRecording(recording.id)
-      releaseUrl(recording.blob)
+      await recordingsStore.remove(recording)
       setLoaded((prev) => ({ ...prev, items: prev.items.filter((r) => r.id !== recording.id) }))
     } catch {
       setError('Kayıt silinemedi.')

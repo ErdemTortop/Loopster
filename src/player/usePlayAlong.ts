@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Recording } from './recordingsDb'
+import { recordingsStore } from './recordingsStore'
 import { clamp, type LoopState, type Player } from './useAlphaTab'
 
 const BALANCE_KEY = 'loopster.playAlong.balance'
@@ -139,7 +140,8 @@ export function usePlayAlong(player: Player) {
       let buffer: AudioBuffer
       try {
         ctx = new AudioContext()
-        buffer = await ctx.decodeAudioData(await take.blob.arrayBuffer())
+        const audio = await recordingsStore.blobFor(take)
+        buffer = await ctx.decodeAudioData(await audio.arrayBuffer())
       } catch {
         setPreparingId(null)
         setError('Kayıt açılamadı; bu tarayıcı kaydın biçimini çözemiyor olabilir.')
