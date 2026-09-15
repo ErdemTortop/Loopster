@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
 import type { BarRect, Player } from '../player/useAlphaTab'
 
 interface Range {
@@ -34,12 +34,13 @@ const TAP_SLOP = 8
  * A click or tap on a bar moves the cursor there; a finger drag on the score still scrolls.
  */
 export function LoopEnvelope({ player }: { player: Player }) {
-  const { loop, layoutEpoch, getBarRects, setLoopRange, seekToBar } = player
-  // Bounds only change when alphaTab re-renders, which bumps layoutEpoch.
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  const rects = useMemo(() => getBarRects(), [getBarRects, layoutEpoch])
+  const { loop, getBarRects, setLoopRange, seekToBar } = player
+  // Read on every render; App re-renders once alphaTab publishes new bounds (layoutEpoch).
+  const rects = getBarRects()
 
   const overlayRef = useRef<HTMLDivElement>(null)
+  // Bounds captured fresh when a drag starts, so a stale render can never leave us without bars.
+  const dragRectsRef = useRef<BarRect[]>([])
   const dragRef = useRef<Drag | null>(null)
   const draftRef = useRef<Range | null>(null)
   const [draft, setDraft] = useState<Range | null>(null)
@@ -49,7 +50,7 @@ export function LoopEnvelope({ player }: { player: Player }) {
     setDraft(next)
   }
 
-  const barAt = (clientX: number, clientY: number): number | null => {
+  const barAt = (clientX: number, clientY: number, rects: BarRect[]): number | null => {
     const box = overlayRef.current?.getBoundingClientRect()
     if (!box || rects.length === 0) return null
     const x = clientX - box.left
@@ -83,7 +84,8 @@ export function LoopEnvelope({ player }: { player: Player }) {
 
   const onPointerDown = (e: ReactPointerEvent<HTMLDivElement>) => {
     if (e.button !== 0) return
-    const bar = barAt(e.clientX, e.clientY)
+    dragRectsRef.current = getBarRects()
+    const bar = barAt(e.clientX, e.clientY, dragRectsRef.current)
     if (bar === null) return
     const handle = (e.target as HTMLElement).closest<HTMLElement>('[data-handle]')?.dataset.handle
     const mode: DragMode =
@@ -105,7 +107,7 @@ export function LoopEnvelope({ player }: { player: Player }) {
       dragRef.current = null
       return
     }
-    const bar = barAt(e.clientX, e.clientY)
+    const bar = barAt(e.clientX, e.clientY, dragRectsRef.current)
     if (bar === null) return
     if (drag.mode === 'create') {
       updateDraft({ start: Math.min(drag.anchor, bar), end: Math.max(drag.anchor, bar) })

@@ -158,10 +158,9 @@ export function useAlphaTab(
         setStatus('rendering')
       }),
       api.renderStarted.on(() => setStatus((s) => (s === 'error' ? s : 'rendering'))),
-      api.renderFinished.on(() => {
-        setStatus((s) => (s === 'error' ? s : 'ready'))
-        setLayoutEpoch((n) => n + 1)
-      }),
+      api.renderFinished.on(() => setStatus((s) => (s === 'error' ? s : 'ready'))),
+      // With worker rendering, boundsLookup is only published after postRenderFinished, not renderFinished.
+      api.postRenderFinished.on(() => setLayoutEpoch((n) => n + 1)),
       api.soundFontLoad.on((e) => {
         if (e.total > 0) setSoundFontProgress(e.loaded / e.total)
       }),
