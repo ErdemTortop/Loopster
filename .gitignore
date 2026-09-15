@@ -9,6 +9,10 @@ lerna-debug.log*
 
 node_modules
 dist
+
+# Copied from node_modules by the alphaTab Vite plugin
+public/font
+public/soundfont
 dist-ssr
 *.local
 
