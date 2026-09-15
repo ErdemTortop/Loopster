@@ -33,6 +33,8 @@ Tempo, metronom, kademeli hızlanma, loop, parçalar ve transpoze alt çubuktaki
 - **Görünüm:** "Sadece tab" nota satırını gizler (davul gibi tabı olmayan partiler notayla kalır); nota büyüklüğü
   %60–%200 arası ayarlanır. İkisi de hatırlanır.
 - **Transpoze:** yarım ses adımlarla, sadece ses kayar (tab aynı kalır). Kapo ya da düşük akort için.
+- **Çift tıkla açma (sadece masaüstü):** kurulumdan sonra Guitar Pro dosyalarına çift tıklayınca Loopster'da açılır.
+  Uygulama zaten açıksa dosya yeni pencere açmadan mevcut pencerede açılır.
 - **Egzersiz klasörü (sadece masaüstü):** bir klasör seçersin, içindeki tüm Guitar Pro dosyaları sol raftaki
   **Kütüphane** panelinde alt klasörlerine göre gruplanmış olarak listelenir; tek tıkla açılır, arama kutusu vardır.
   Seçtiğin klasör hatırlanır, uygulamayı kapatıp açınca yine oradadır.

@@ -15,8 +15,19 @@ export interface LibrarySnapshot {
   truncated: boolean
 }
 
+/** A tab file the shell read for us, e.g. one double-clicked in Explorer. */
+export interface OpenedFile {
+  name: string
+  path: string
+  data: Uint8Array
+}
+
 interface DesktopApi {
   desktop: true
+  file: {
+    pending: () => Promise<OpenedFile | null>
+    onOpen: (listener: (file: OpenedFile) => void) => () => void
+  }
   library: {
     pick: () => Promise<LibrarySnapshot | null>
     restore: () => Promise<LibrarySnapshot | null>

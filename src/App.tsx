@@ -13,6 +13,7 @@ import { TransportBar } from './components/TransportBar'
 import { Button } from './components/ui'
 import { WelcomeScreen } from './components/WelcomeScreen'
 import { useAlphaTab, type Player } from './player/useAlphaTab'
+import { useDesktopFile } from './player/useDesktopFile'
 import { useLibrary } from './player/useLibrary'
 import { useNotes } from './player/useNotes'
 import { usePlayAlong } from './player/usePlayAlong'
@@ -69,8 +70,9 @@ function App() {
     },
     [stopPlayAlong, stopRecording, loadFile],
   )
-  // Desktop only: the folder of tab files the user practises from.
+  // Desktop only: the folder of tab files the user practises from, and files opened from Explorer.
   const library = useLibrary(openFile)
+  useDesktopFile(openFile)
 
   useEffect(() => {
     document.documentElement.classList.toggle('light', theme === 'light')

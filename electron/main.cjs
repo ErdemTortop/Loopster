@@ -33,6 +33,38 @@ const SKIPPED_DIRS = new Set(['node_modules', '.git', '.svn', 'System Volume Inf
 
 /** The folder the user picked; only files under it may be read. */
 let libraryRoot = null
+/** A file the user opened from Explorer before the window was ready to receive it. */
+let pendingFile = null
+
+/** The tab file in a command line, as Windows passes it when a .gp5 is double-clicked. */
+function fileFromArgv(argv) {
+  for (const arg of argv.slice(1)) {
+    if (arg.startsWith('-') || arg === '.') continue
+    if (SUPPORTED.has(path.extname(arg).toLowerCase())) return path.resolve(arg)
+  }
+  return null
+}
+
+async function readTab(filePath) {
+  const data = await fs.readFile(filePath)
+  return { name: path.basename(filePath), path: filePath, data: new Uint8Array(data) }
+}
+
+/** Hands a double-clicked file to the window, or keeps it until the window asks for it. */
+async function deliverFile(window, filePath) {
+  try {
+    const file = await readTab(filePath)
+    if (window && !window.isDestroyed()) {
+      window.webContents.send('file:open', file)
+      if (window.isMinimized()) window.restore()
+      window.focus()
+    } else {
+      pendingFile = filePath
+    }
+  } catch {
+    pendingFile = null
+  }
+}
 
 const stateFile = () => path.join(app.getPath('userData'), 'library.json')
 
@@ -95,6 +127,18 @@ async function openLibrary(root) {
 }
 
 function registerIpc(getWindow) {
+  // The renderer asks once on start-up: a file the app was launched with, if any.
+  ipcMain.handle('file:pending', async () => {
+    const filePath = pendingFile
+    pendingFile = null
+    if (!filePath) return null
+    try {
+      return await readTab(filePath)
+    } catch {
+      return null
+    }
+  })
+
   ipcMain.handle('library:pick', async () => {
     const result = await dialog.showOpenDialog(getWindow(), {
       title: 'Egzersiz klasörünü seç',
@@ -207,6 +251,7 @@ if (!app.requestSingleInstanceLock()) {
       }
     })
 
+    pendingFile = fileFromArgv(process.argv)
     registerIpc(() => mainWindow)
     mainWindow = createWindow()
 
@@ -215,11 +260,21 @@ if (!app.requestSingleInstanceLock()) {
     })
   })
 
-  app.on('second-instance', () => {
-    if (mainWindow) {
+  // Double-clicking another file while Loopster runs opens it in the window that is already there.
+  app.on('second-instance', (_event, argv) => {
+    const filePath = fileFromArgv(argv)
+    if (filePath) void deliverFile(mainWindow, filePath)
+    else if (mainWindow) {
       if (mainWindow.isMinimized()) mainWindow.restore()
       mainWindow.focus()
     }
+  })
+
+  // macOS delivers the double-clicked file as an event instead of an argument.
+  app.on('open-file', (event, filePath) => {
+    event.preventDefault()
+    if (mainWindow) void deliverFile(mainWindow, filePath)
+    else pendingFile = filePath
   })
 
   app.on('window-all-closed', () => {

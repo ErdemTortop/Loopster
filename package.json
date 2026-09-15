@@ -18,6 +18,14 @@
     "productName": "Loopster",
     "directories": { "output": "release" },
     "files": ["dist/**", "electron/**", "package.json"],
+    "fileAssociations": [
+      {
+        "ext": ["gp", "gp3", "gp4", "gp5", "gpx"],
+        "name": "Guitar Pro tab",
+        "description": "Guitar Pro tab dosyasi",
+        "role": "Viewer"
+      }
+    ],
     "win": { "target": ["nsis"] },
     "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true }
   },
