@@ -93,6 +93,12 @@ html.light .faceplate {
   text-shadow: 0 0 10px rgb(255 160 40 / 0.45);
 }
 
+/* Break time is green so it reads differently from focus time at a glance. */
+.led-break {
+  color: #7ee0a1;
+  text-shadow: 0 0 10px rgb(90 220 140 / 0.45);
+}
+
 /* alphaTab draws black notation, so keep it on a light "paper" in both themes. */
 .score-paper {
   background: #fdfcf8;

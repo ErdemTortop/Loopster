@@ -5,15 +5,19 @@ hangisinin ne zaman yapılacağına karar veriyoruz.
 
 Durumlar: **bekliyor** · **planlandı (Faz N)** · **yapıldı** · **vazgeçildi**
 
+
 ## Kullanıcının fikirleri
 
 | Fikir | Durum | Not |
 | --- | --- | --- |
 | Loop için Guitar Pro tarzı zarf | yapıldı | Faz 2 sonrası; A/B tuşları ve ölçü kutuları kaldırıldı |
+| Egzersizler için pomodoro sayacı | yapılıyor (1/3) | Süre bitince çalma durur, zil çalar, mola başlar; 25/5 dk ayarlanabilir |
+| Not alabilme | planlandı (2/3) | Parçaya genel not + loop aralığına bağlı notlar (nota tıklayınca loop'u açar) |
+| Ses kaydetme ve kaydı dinleme | planlandı (3/3) | Mikrofonla kayıt; parça bazında liste, dinle / sil / indir; tarayıcıda saklanır |
 
 ## Ertelenenler
 
 | Fikir | Durum | Not |
 | --- | --- | --- |
-| Bluetooth sayfa çevirme pedalı desteği | bekliyor | Faz 2'de "şimdilik gerek yok" dendi |
+| Bluetooth sayfa çevirme pedalı desteği | vazgeçildi | Faz 3 sonrası "yapılmayacak" dendi |
 | Pratik istatistikleri (parça başına süre, loop tekrar sayısı) | bekliyor | Brief'te Faz 4 için opsiyonel |

@@ -8,6 +8,7 @@ import { TransportBar } from './components/TransportBar'
 import { Button } from './components/ui'
 import { WelcomeScreen } from './components/WelcomeScreen'
 import { useAlphaTab, type Player } from './player/useAlphaTab'
+import { formatClock, usePomodoro } from './player/usePomodoro'
 import { useShortcuts } from './player/useShortcuts'
 
 type Theme = 'dark' | 'light'
@@ -19,6 +20,7 @@ function App() {
   const containerRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const player = useAlphaTab(containerRef, scrollRef)
+  const pomodoro = usePomodoro({ onWorkEnd: player.pause })
 
   useEffect(() => {
     document.documentElement.classList.toggle('light', theme === 'light')
@@ -110,6 +112,22 @@ function App() {
         </div>
       )}
 
+      {pomodoro.phase === 'break' && (
+        <div
+          role="status"
+          className="relative z-40 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-[#2f6b47] bg-[#12301f] px-4 py-2 text-[#c9f2d6] sm:px-5"
+        >
+          <span className="font-display text-lg font-semibold tracking-[0.16em] uppercase">
+            Mola{pomodoro.running ? '' : ' · durdu'}
+          </span>
+          <span className="led led-break text-2xl font-semibold">{formatClock(pomodoro.remainingMs)}</span>
+          <span className="text-sm">Gitarı bırak, ellerini gevşet. Mola bitince zil çalar.</span>
+          <Button onClick={pomodoro.reset} className="ml-auto">
+            Molayı atla
+          </Button>
+        </div>
+      )}
+
       {/* overflow-hidden clips the closed drawer so it never slides over the transport bar. */}
       <div className="relative flex min-h-0 flex-1 overflow-hidden">
         <main ref={scrollRef} className="relative min-h-0 flex-1 overflow-auto">
@@ -142,12 +160,13 @@ function App() {
             panelOpen ? 'translate-y-0 lg:translate-x-0' : 'translate-y-full lg:translate-x-full lg:translate-y-0'
           }`}
         >
-          <PracticePanel player={player} disabled={!hasScore} onClose={() => setPanelOpen(false)} />
+          <PracticePanel player={player} pomodoro={pomodoro} disabled={!hasScore} onClose={() => setPanelOpen(false)} />
         </aside>
       </div>
 
       <TransportBar
         player={player}
+        pomodoro={pomodoro}
         canPlay={canPlay}
         statusMessage={statusText(player)}
         panelOpen={panelOpen}

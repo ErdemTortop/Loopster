@@ -1,9 +1,11 @@
 import { SPEED_MAX, SPEED_MIN, type Player } from '../player/useAlphaTab'
+import { formatClock, type Pomodoro } from '../player/usePomodoro'
 import { PauseIcon, PlayIcon, SlidersIcon, StepBackIcon, StepForwardIcon, StopIcon } from './icons'
 import { LedDot, Readout } from './ui'
 
 interface Props {
   player: Player
+  pomodoro: Pomodoro
   canPlay: boolean
   statusMessage: string | null
   panelOpen: boolean
@@ -16,7 +18,7 @@ const stepperClass =
   'w-12 bg-raised text-2xl font-semibold text-ink transition-colors hover:text-accent disabled:cursor-not-allowed disabled:opacity-40'
 
 /** Always-visible controls, sized for reaching over with a guitar in your lap. */
-export function TransportBar({ player, canPlay, statusMessage, panelOpen, onTogglePanel }: Props) {
+export function TransportBar({ player, pomodoro, canPlay, statusMessage, panelOpen, onTogglePanel }: Props) {
   const { info, loop, speed } = player
   const hasScore = info !== null
   const bpm = info
@@ -127,6 +129,28 @@ export function TransportBar({ player, canPlay, statusMessage, panelOpen, onTogg
 
         <div className="ml-auto flex items-center gap-3">
           {statusMessage && <span className="text-sm text-muted">{statusMessage}</span>}
+          <button
+            type="button"
+            onClick={pomodoro.toggle}
+            aria-pressed={pomodoro.running}
+            aria-label={pomodoro.running ? 'Pomodoro sayacını duraklat' : 'Pomodoro sayacını başlat'}
+            title="Pomodoro: tıkla başlat / duraklat (süreler Ayarlar'da)"
+            className={`flex h-14 min-w-24 flex-col justify-center rounded-xl border bg-display px-3 text-left shadow-[inset_0_2px_8px_rgb(0_0_0/0.65)] transition-colors hover:border-accent/60 ${
+              pomodoro.running ? 'border-accent/60' : 'border-black/50'
+            }`}
+          >
+            <span className="font-display text-[0.7rem] leading-none font-semibold tracking-[0.2em] text-[#8d877c] uppercase">
+              {pomodoro.phase === 'break' ? 'Mola' : 'Odak'}
+              {!pomodoro.running && pomodoro.phase !== 'idle' ? ' · durdu' : ''}
+            </span>
+            <span
+              className={`led ${pomodoro.phase === 'break' ? 'led-break' : ''} mt-1 text-2xl leading-none font-semibold ${
+                pomodoro.running ? '' : 'opacity-60'
+              }`}
+            >
+              {formatClock(pomodoro.remainingMs)}
+            </span>
+          </button>
           <button
             type="button"
             onClick={onTogglePanel}
