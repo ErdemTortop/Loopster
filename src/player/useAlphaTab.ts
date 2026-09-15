@@ -1,5 +1,6 @@
 import * as alphaTab from '@coderline/alphatab'
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
+import { playClick, unlockClick } from './clickSound'
 
 type Score = alphaTab.model.Score
 type Track = alphaTab.model.Track
@@ -23,9 +24,13 @@ export interface LoopState {
   end: number
 }
 
+/** "tok": our own punchy click; "classic": alphaTab's built-in General MIDI click. */
+export type MetronomeSound = 'tok' | 'classic'
+
 export interface MetronomeState {
   enabled: boolean
   volume: number
+  sound: MetronomeSound
 }
 
 export interface TrainerConfig {
@@ -89,6 +94,20 @@ function loadView(): ViewState {
     }
   } catch {
     return { tabOnly: false, zoom: 100 }
+  }
+}
+
+const METRONOME_SOUND_KEY = 'loopster.metronomeSound'
+/** alphaTab's click sample is quiet, so the classic sound gets a gain boost. */
+const CLASSIC_BOOST = 2
+/** A count-in volume of 0 disables the count-in entirely, so the "tok" sound keeps it on but inaudible. */
+const SILENT_COUNT_IN = 0.0001
+
+function loadMetronomeSound(): MetronomeSound {
+  try {
+    return localStorage.getItem(METRONOME_SOUND_KEY) === 'classic' ? 'classic' : 'tok'
+  } catch {
+    return 'tok'
   }
 }
 
@@ -158,7 +177,11 @@ export function useAlphaTab(
   const [currentBar, setCurrentBar] = useState(0)
   const [currentBpm, setCurrentBpm] = useState<number | null>(null)
   const [speed, setSpeedState] = useState(100)
-  const [metronome, setMetronomeState] = useState<MetronomeState>({ enabled: false, volume: 0.6 })
+  const [metronome, setMetronomeState] = useState<MetronomeState>(() => ({
+    enabled: false,
+    volume: 0.6,
+    sound: loadMetronomeSound(),
+  }))
   const [countIn, setCountIn] = useState(false)
   const [loop, setLoop] = useState<LoopState>(NO_LOOP)
   const [trainer, setTrainerState] = useState<TrainerConfig>({
@@ -175,11 +198,14 @@ export function useAlphaTab(
   const [visualMetronome, setVisualMetronomeState] = useState(loadVisualMetronome)
   // Beats go straight to subscribers (the beat light) instead of React state, to avoid re-rendering on every click.
   const beatListenersRef = useRef(new Set<(beat: BeatEvent) => void>())
+  // Metronome events still to come from the count-in bar of the current start.
+  const countInLeftRef = useRef(0)
+  const playingRef = useRef(false)
 
   // alphaTab handlers are registered once, so they read current values from here.
-  const latest = useRef({ speed, loop, trainer, trackIndex, isPlaying, view })
+  const latest = useRef({ speed, loop, trainer, trackIndex, isPlaying, view, metronome, countIn })
   useEffect(() => {
-    latest.current = { speed, loop, trainer, trackIndex, isPlaying, view }
+    latest.current = { speed, loop, trainer, trackIndex, isPlaying, view, metronome, countIn }
   })
   const currentBarRef = useRef(0)
   const roundRef = useRef(0)
@@ -260,7 +286,20 @@ export function useAlphaTab(
         setMidiEpoch((n) => n + 1)
       }),
       api.playerStateChanged.on((e) => {
-        setIsPlaying(e.state === alphaTab.synth.PlayerState.Playing)
+        const playing = e.state === alphaTab.synth.PlayerState.Playing
+        const wasPlaying = playingRef.current
+        playingRef.current = playing
+        setIsPlaying(playing)
+        // alphaTab plays a count-in bar on every start; its clicks arrive first as metronome events.
+        // Arm only on a real start: alphaTab reports "playing" again when the count-in hands over to
+        // the song, and loop wraps do not change state at all.
+        if (playing && !wasPlaying) {
+          countInLeftRef.current = latest.current.countIn
+            ? (api.score?.masterBars[currentBarRef.current]?.timeSignatureNumerator ?? 4)
+            : 0
+        } else if (!playing) {
+          countInLeftRef.current = 0
+        }
         if (e.stopped) {
           roundRef.current = 0
           setRound(0)
@@ -286,6 +325,10 @@ export function useAlphaTab(
           if (event.type !== alphaTab.midi.MidiEventType.AlphaTabMetronome) continue
           const click = event as alphaTab.midi.AlphaTabMetronomeEvent
           const beat: BeatEvent = { index: click.metronomeNumerator, durationMs: click.metronomeDurationInMilliseconds }
+          const inCountIn = countInLeftRef.current > 0
+          if (inCountIn) countInLeftRef.current -= 1
+          const { metronome } = latest.current
+          if (metronome.sound === 'tok' && (metronome.enabled || inCountIn)) playClick(metronome.volume, beat.index === 0)
           beatListenersRef.current.forEach((listener) => listener(beat))
         }
       }),
@@ -308,15 +351,29 @@ export function useAlphaTab(
     if (api) api.playbackSpeed = speed / 100
   }, [speed, apiEpoch, playerReady])
 
+  // "classic" is alphaTab's own click (boosted); "tok" mutes it and plays our click on its metronome events.
   useEffect(() => {
     const api = apiRef.current
-    if (api) api.metronomeVolume = metronome.enabled ? metronome.volume : 0
+    if (api) {
+      api.metronomeVolume = metronome.enabled && metronome.sound === 'classic' ? metronome.volume * CLASSIC_BOOST : 0
+    }
   }, [metronome, apiEpoch, playerReady])
 
   useEffect(() => {
     const api = apiRef.current
-    if (api) api.countInVolume = countIn ? Math.max(metronome.volume, 0.3) : 0
-  }, [countIn, metronome.volume, apiEpoch, playerReady])
+    if (!api) return
+    if (!countIn) api.countInVolume = 0
+    else if (metronome.sound === 'classic') api.countInVolume = Math.max(metronome.volume, 0.3) * CLASSIC_BOOST
+    else api.countInVolume = SILENT_COUNT_IN
+  }, [countIn, metronome.volume, metronome.sound, apiEpoch, playerReady])
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(METRONOME_SOUND_KEY, metronome.sound)
+    } catch {
+      // Not remembered; fine.
+    }
+  }, [metronome.sound])
 
   useEffect(() => {
     const api = apiRef.current
@@ -450,8 +507,13 @@ export function useAlphaTab(
     api.renderTracks([track])
   }, [])
 
-  const playPause = useCallback(() => apiRef.current?.playPause(), [])
+  // Starting playback is a user gesture, the moment the click sound may create its audio context.
+  const playPause = useCallback(() => {
+    unlockClick()
+    apiRef.current?.playPause()
+  }, [])
   const play = useCallback(() => {
+    unlockClick()
     apiRef.current?.play()
   }, [])
   const pause = useCallback(() => apiRef.current?.pause(), [])

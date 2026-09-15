@@ -22,7 +22,7 @@ Tempo, metronom, kademeli hızlanma, loop, parçalar ve transpoze alt çubuktaki
 - **Tempo:** %25–%150 arası hız. Gerçek BPM hesaplanıp gösterilir; %50 / %75 / %100 hızlı düğmeleri.
 - **Görsel metronom:** alt çubukta her vuruşta yanıp sönen ışıklar (ölçünün ilk vuruşu daha parlak). Metronom sesi
   kapalıyken de çalışır; Ayarlar'daki "Görsel vuruş" ile açılıp kapanır.
-- **Metronom** ve ses seviyesi. **Giriş sayımı** açıksa Çal'a basınca bir ölçü sayar.
+- **Metronom** ve ses seviyesi. İki ses: **Tok** (güçlü, tahta blok benzeri; varsayılan) ve **Klasik** (alphaTab'ın kendi tıkı). **Giriş sayımı** açıksa Çal'a basınca bir ölçü sayar.
 - **Loop zarfı:** Guitar Pro'daki gibi notanın üzerinde bir kutu, tam ölçü sınırlarında döner. Fareyle ölçülerin
   üzerinden sürükleyerek oluştur, kenarlarındaki tutamaçları çekerek genişlet ya da daralt (tablette parmakla da).
   Bir ölçüye tıklamak imleci oraya götürür.

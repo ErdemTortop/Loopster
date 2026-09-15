@@ -76,6 +76,22 @@ export function SettingsShelf({ player, disabled, onClose }: Props) {
                 Giriş sayımı
               </Toggle>
             </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Toggle
+                on={metronome.sound === 'tok'}
+                onClick={() => player.setMetronome({ sound: 'tok' })}
+                title="Güçlü, tahta blok benzeri tık"
+              >
+                Tok
+              </Toggle>
+              <Toggle
+                on={metronome.sound === 'classic'}
+                onClick={() => player.setMetronome({ sound: 'classic' })}
+                title="alphaTab'ın kendi tık sesi (yükseltilmiş)"
+              >
+                Klasik
+              </Toggle>
+            </div>
             <Toggle
               on={player.visualMetronome}
               onClick={() => player.setVisualMetronome(!player.visualMetronome)}
