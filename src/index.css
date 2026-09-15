@@ -19,6 +19,9 @@ body {
 .score-paper {
   background: #fdfcf8;
   color: #111;
+  /* Dragging across bars selects a loop; without this it also selects the SVG text. */
+  -webkit-user-select: none;
+  user-select: none;
 }
 
 /* alphaTab adds these elements but ships no styles for them. */
