@@ -43,7 +43,11 @@ export interface TrainerConfig {
 export interface TrackMix {
   mute: boolean
   solo: boolean
+  /** Multiplier on the file's own track volume; 1 keeps the mix as written. */
+  volume: number
 }
+
+export const TRACK_VOLUME_MAX = 1.5
 
 /** Bar bounds relative to the alphaTab container, one entry per bar. */
 export interface BarRect {
@@ -284,7 +288,7 @@ export function useAlphaTab(
           tracks: score.tracks.map((t) => ({ index: t.index, name: t.name })),
         })
         setTrackIndex(0)
-        setMix(score.tracks.map(() => ({ mute: false, solo: false })))
+        setMix(score.tracks.map(() => ({ mute: false, solo: false, volume: 1 })))
         setLoop(NO_LOOP)
         loopSetRef.current = false
         roundRef.current = 0
@@ -443,6 +447,9 @@ export function useAlphaTab(
     score.tracks.forEach((track, i) => {
       api.changeTrackMute([track], mix[i]?.mute ?? false)
       api.changeTrackSolo([track], mix[i]?.solo ?? false)
+      // changeTrackVolume replaces the channel volume alphaTab set from the file (playbackInfo.volume, 0–16),
+      // so scale that level instead of overwriting it.
+      api.changeTrackVolume([track], (track.playbackInfo.volume / 16) * (mix[i]?.volume ?? 1))
     })
   }, [mix, midiEpoch])
 
@@ -684,6 +691,10 @@ export function useAlphaTab(
   const toggleSolo = useCallback((index: number) => {
     setMix((m) => m.map((t, i) => (i === index ? { ...t, solo: !t.solo } : t)))
   }, [])
+  const setTrackVolume = useCallback((index: number, volume: number) => {
+    const value = clamp(volume, 0, TRACK_VOLUME_MAX)
+    setMix((m) => m.map((t, i) => (i === index ? { ...t, volume: value } : t)))
+  }, [])
 
   const setTranspose = useCallback((semitones: number) => {
     setTransposeState(clamp(Math.round(semitones), -TRANSPOSE_LIMIT, TRANSPOSE_LIMIT))
@@ -741,6 +752,7 @@ export function useAlphaTab(
     setTrainer,
     toggleMute,
     toggleSolo,
+    setTrackVolume,
     setTranspose,
     changeTranspose,
   }

@@ -1,5 +1,13 @@
 import type { ReactNode } from 'react'
-import { SPEED_MAX, SPEED_MIN, ZOOM_MAX, ZOOM_MIN, ZOOM_STEP, type Player } from '../player/useAlphaTab'
+import {
+  SPEED_MAX,
+  SPEED_MIN,
+  TRACK_VOLUME_MAX,
+  ZOOM_MAX,
+  ZOOM_MIN,
+  ZOOM_STEP,
+  type Player,
+} from '../player/useAlphaTab'
 import { Button, NumberField, Readout, Section, Toggle } from './ui'
 
 const hintClass = 'text-sm text-muted'
@@ -189,18 +197,51 @@ export function SettingsShelf({ player, disabled, onClose }: Props) {
         <Cell>
           <Section title="Parçalar">
             {info && info.tracks.length > 0 ? (
-              <ul className="space-y-2">
-                {info.tracks.map((track, i) => (
-                  <li key={track.index} className="flex items-center gap-2">
-                    <span className="min-w-0 flex-1 truncate">{track.name || `Parça ${i + 1}`}</span>
-                    <Toggle on={player.mix[i]?.mute ?? false} tone="red" onClick={() => player.toggleMute(i)}>
-                      Sustur
-                    </Toggle>
-                    <Toggle on={player.mix[i]?.solo ?? false} onClick={() => player.toggleSolo(i)}>
-                      Solo
-                    </Toggle>
-                  </li>
-                ))}
+              <ul className="space-y-3">
+                {info.tracks.map((track, i) => {
+                  const name = track.name || `Parça ${i + 1}`
+                  const volume = Math.round((player.mix[i]?.volume ?? 1) * 100)
+                  return (
+                    <li key={track.index} className="space-y-1">
+                      <div className="flex items-center gap-2">
+                        <span className="min-w-0 flex-1 truncate" title={name}>
+                          {name}
+                        </span>
+                        <Toggle
+                          on={player.mix[i]?.mute ?? false}
+                          tone="red"
+                          onClick={() => player.toggleMute(i)}
+                          title="Sustur"
+                          className="px-2 text-sm"
+                        >
+                          Sus
+                        </Toggle>
+                        <Toggle
+                          on={player.mix[i]?.solo ?? false}
+                          onClick={() => player.toggleSolo(i)}
+                          title="Solo"
+                          className="px-2 text-sm"
+                        >
+                          Solo
+                        </Toggle>
+                      </div>
+                      <label className="flex items-center gap-2" title="Çift tıkla: %100">
+                        <span className="sr-only">{name} ses seviyesi</span>
+                        <input
+                          type="range"
+                          min={0}
+                          max={TRACK_VOLUME_MAX * 100}
+                          step={5}
+                          value={volume}
+                          onChange={(e) => player.setTrackVolume(i, Number(e.target.value) / 100)}
+                          onDoubleClick={() => player.setTrackVolume(i, 1)}
+                          className="h-8 min-w-0 flex-1 accent-accent"
+                        />
+                        <span className="led w-12 text-right text-sm">%{volume}</span>
+                      </label>
+                    </li>
+                  )
+                })}
               </ul>
             ) : (
               <p className={hintClass}>Dosya açınca parçalar burada listelenir.</p>
