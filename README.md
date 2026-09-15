@@ -26,6 +26,8 @@ Tempo, metronom, kademeli hızlanma, loop, parçalar ve transpoze alt çubuktaki
 - **Loop zarfı:** Guitar Pro'daki gibi notanın üzerinde bir kutu, tam ölçü sınırlarında döner. Fareyle ölçülerin
   üzerinden sürükleyerek oluştur, kenarlarındaki tutamaçları çekerek genişlet ya da daralt (tablette parmakla da).
   Bir ölçüye tıklamak imleci oraya götürür.
+- **Hazırlık ölçüsü:** loop baştan başlarken bir önceki ölçüden girersin; tur dönüşleri yine loop başına döner.
+- **Zorlandım (Z):** hızı bir adım düşürür ve tur sayacını sıfırlar; kademeli hızlanma yeni hızdan tekrar sayar.
 - **Kademeli hızlanma:** "Her N turda hızı %X artır, %Y'ye ulaşınca bu hızda devam et." Tur ve anlık hız ekranda görünür.
 - **Parçalar:** her enstrümanı susturma ya da solo.
 - **Görünüm:** "Sadece tab" nota satırını gizler (davul gibi tabı olmayan partiler notayla kalır); nota büyüklüğü
@@ -46,6 +48,7 @@ Tempo, metronom, kademeli hızlanma, loop, parçalar ve transpoze alt çubuktaki
 | Esc | Durdur |
 | ← / → | Bir ölçü geri / ileri |
 | L | Loop aç / kapa |
+| Z | Zorlandım: hızı bir adım düşür, tur sayacını sıfırla |
 | M | Metronom aç / kapa |
 | − / + | Hızı %5 azalt / artır |
 | R | Kayda başla / durdur |

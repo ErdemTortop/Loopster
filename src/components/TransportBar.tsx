@@ -171,6 +171,18 @@ export function TransportBar({ player, recorder, canPlay, statusMessage, shelfOp
           </span>
         </button>
         {loop.enabled && <Readout label="Tur">{player.round}</Readout>}
+        {loop.enabled && (
+          <button
+            type="button"
+            onClick={player.struggled}
+            disabled={speed <= SPEED_MIN}
+            title="Zorlandım (Z): hızı bir adım düşürür, tur sayacını sıfırlar"
+            className={`${keyClass} h-14 flex-col gap-1 rounded-xl px-3 leading-none`}
+          >
+            <span className="font-display text-sm font-semibold tracking-[0.14em] uppercase">Zorlandım</span>
+            <span className="font-mono text-xs text-muted">−%{player.trainer.enabled ? player.trainer.stepPct : 5}</span>
+          </button>
+        )}
 
         <div className="ml-auto flex items-center gap-3">
           {statusMessage && <span className="text-sm text-muted">{statusMessage}</span>}

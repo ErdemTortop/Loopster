@@ -16,7 +16,7 @@ Durumlar: **bekliyor** · **planlandı (Faz N)** · **yapıldı** · **vazgeçil
 | Sadece tab görünümü + yakınlaştırma | yapıldı | Nota satırını gizle; nota/tab büyüklüğünü ayarla |
 | Görsel metronom | yapıldı |
 | Daha tok ve güçlü metronom sesi | yapıldı | alphaTab'ın tıkı cılız bulundu; Tok (yeni) / Klasik (yükseltilmiş) seçimi | Her vuruşta yanıp sönen büyük LED |
-| Loop'a hazırlık payı + "Zorlandım" düğmesi | bekliyor | Loop'tan önce bir ölçü giriş; tek dokunuşla hızı %5 düşür ve tur sayacını sıfırla |
+| Loop'a hazırlık payı + "Zorlandım" düğmesi | yapıldı | Loop'tan önce bir ölçü giriş; tek dokunuşla hızı %5 düşür ve tur sayacını sıfırla |
 | Parça ses seviyeleri | bekliyor | Her enstrüman için ses kaydırıcısı (sustur/solo'ya ek) |
 | Kaydı tab ile birlikte dinleme | bekliyor | Kendi kaydını tab'ın sesiyle aynı anda çal, zamanlamayı karşılaştır |
 | Uygulama olarak kurma (PWA) | bekliyor | Yayından sonra kurulabilir ve internetsiz çalışır; Faz 4 yayın adımıyla birlikte |

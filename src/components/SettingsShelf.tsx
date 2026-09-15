@@ -116,9 +116,17 @@ export function SettingsShelf({ player, disabled, onClose }: Props) {
         </Cell>
 
         <Cell>
-          <Section title="Kademeli hızlanma">
+          <Section title="Loop çalışması">
+            <Toggle
+              on={player.preRoll}
+              onClick={() => player.setPreRoll(!player.preRoll)}
+              title="Loop baştan başlarken bir önceki ölçüden girer"
+              className="w-full"
+            >
+              Hazırlık ölçüsü
+            </Toggle>
             <Toggle on={trainer.enabled} onClick={() => player.setTrainer({ enabled: !trainer.enabled })} className="w-full">
-              {trainer.enabled ? 'Açık' : 'Kapalı'}
+              Kademeli hızlanma
             </Toggle>
             <div className="flex flex-wrap items-end gap-3">
               <NumberField label="Her … turda" value={trainer.everyN} min={1} max={99} onCommit={(v) => player.setTrainer({ everyN: v })} />

@@ -97,6 +97,18 @@ function loadView(): ViewState {
   }
 }
 
+const PRE_ROLL_KEY = 'loopster.preRoll'
+/** How close to the loop's first bar the position must be for a start to count as "from the top". */
+const PRE_ROLL_TOLERANCE_TICKS = 120
+
+function loadPreRoll(): boolean {
+  try {
+    return localStorage.getItem(PRE_ROLL_KEY) !== '0'
+  } catch {
+    return true
+  }
+}
+
 const METRONOME_SOUND_KEY = 'loopster.metronomeSound'
 /** alphaTab's click sample is quiet, so the classic sound gets a gain boost. */
 const CLASSIC_BOOST = 2
@@ -196,16 +208,19 @@ export function useAlphaTab(
   const [songId, setSongId] = useState<string | null>(null)
   const [view, setView] = useState<ViewState>(loadView)
   const [visualMetronome, setVisualMetronomeState] = useState(loadVisualMetronome)
+  const [preRoll, setPreRollState] = useState(loadPreRoll)
   // Beats go straight to subscribers (the beat light) instead of React state, to avoid re-rendering on every click.
   const beatListenersRef = useRef(new Set<(beat: BeatEvent) => void>())
   // Metronome events still to come from the count-in bar of the current start.
   const countInLeftRef = useRef(0)
   const playingRef = useRef(false)
+  // True while the playback range is temporarily widened to include the pre-roll bar.
+  const preRollActiveRef = useRef(false)
 
   // alphaTab handlers are registered once, so they read current values from here.
-  const latest = useRef({ speed, loop, trainer, trackIndex, isPlaying, view, metronome, countIn })
+  const latest = useRef({ speed, loop, trainer, trackIndex, isPlaying, view, metronome, countIn, preRoll })
   useEffect(() => {
-    latest.current = { speed, loop, trainer, trackIndex, isPlaying, view, metronome, countIn }
+    latest.current = { speed, loop, trainer, trackIndex, isPlaying, view, metronome, countIn, preRoll }
   })
   const currentBarRef = useRef(0)
   const roundRef = useRef(0)
@@ -241,6 +256,14 @@ export function useAlphaTab(
     // Metronome ticks are reported even when the metronome is muted, timed to the audio output.
     api.midiEventsPlayedFilter = [alphaTab.midi.MidiEventType.AlphaTabMetronome]
     if (import.meta.env.DEV) Object.assign(window, { __loopsterApi: api })
+
+    // See applyPreRoll: the widened first-pass range goes back to the real loop range when it wraps or stops.
+    const restoreLoopRange = () => {
+      if (!preRollActiveRef.current) return
+      preRollActiveRef.current = false
+      const own = ownRangeRef.current
+      if (own && latest.current.loop.enabled) api.playbackRange = { ...own }
+    }
 
     const moveToBar = (bar: number) => {
       if (bar === currentBarRef.current) return
@@ -303,6 +326,7 @@ export function useAlphaTab(
         if (e.stopped) {
           roundRef.current = 0
           setRound(0)
+          restoreLoopRange()
         }
       }),
       api.playerPositionChanged.on((e) => {
@@ -312,6 +336,7 @@ export function useAlphaTab(
       }),
       // With isLooping, alphaTab fires playerFinished at the end of every loop pass.
       api.playerFinished.on(() => {
+        restoreLoopRange()
         const { loop, trainer, speed } = latest.current
         if (!loop.enabled) return
         roundRef.current += 1
@@ -384,6 +409,7 @@ export function useAlphaTab(
     if (!loop.enabled || !cache) {
       if (ownRangeRef.current || api.playbackRange) {
         ownRangeRef.current = null
+        preRollActiveRef.current = false
         api.playbackRange = null
         api.isLooping = false
         api.clearPlaybackRangeHighlight()
@@ -402,6 +428,7 @@ export function useAlphaTab(
     // range really changed (or a new MIDI was loaded) — never as a side effect of a re-render.
     if (rangeDirtyRef.current || !own || own.startTick !== startTick || own.endTick !== endTick) {
       rangeDirtyRef.current = false
+      preRollActiveRef.current = false
       ownRangeRef.current = { startTick, endTick }
       api.playbackRange = { startTick, endTick }
       api.isLooping = true
@@ -448,6 +475,24 @@ export function useAlphaTab(
   const setTabOnly = useCallback((tabOnly: boolean) => setView((v) => ({ ...v, tabOnly })), [])
   const changeZoom = useCallback((delta: number) => {
     setView((v) => ({ ...v, zoom: clamp(v.zoom + delta, ZOOM_MIN, ZOOM_MAX) }))
+  }, [])
+
+  // "Zorlandım": step the tempo back and let the speed trainer count rounds again from here.
+  const struggled = useCallback(() => {
+    const { trainer } = latest.current
+    const step = trainer.enabled ? trainer.stepPct : 5
+    setSpeedState((s) => clamp(s - step, SPEED_MIN, SPEED_MAX))
+    roundRef.current = 0
+    setRound(0)
+  }, [])
+
+  const setPreRoll = useCallback((enabled: boolean) => {
+    setPreRollState(enabled)
+    try {
+      localStorage.setItem(PRE_ROLL_KEY, enabled ? '1' : '0')
+    } catch {
+      // Not remembered; fine.
+    }
   }, [])
 
   const subscribeBeat = useCallback((listener: (beat: BeatEvent) => void) => {
@@ -507,15 +552,37 @@ export function useAlphaTab(
     api.renderTracks([track])
   }, [])
 
+  // Pre-roll: a start from the loop's first bar begins one bar earlier, so you can lead into the hard part.
+  // Loop wraps still return to the loop start, and resuming mid-loop is left alone.
+  const applyPreRoll = useCallback(() => {
+    const api = apiRef.current
+    const score = api?.score
+    const cache = api?.tickCache
+    const { loop, preRoll } = latest.current
+    if (!api || !score || !cache || !preRoll || !loop.enabled || loop.start === 0) return
+    if (api.playerState === alphaTab.synth.PlayerState.Playing) return
+    const own = ownRangeRef.current
+    if (!own || preRollActiveRef.current) return
+    if (Math.abs(api.tickPosition - own.startTick) > PRE_ROLL_TOLERANCE_TICKS) return
+    // Seeking before the playback range does not work: alphaTab ends the pass one range-length after
+    // wherever playback started, so it would go silent before the loop end and never wrap. Instead the
+    // range is widened to include the pre-roll bar for the first pass (setting it also seeks to its start),
+    // and restoreLoopRange puts the real loop range back when that pass wraps.
+    preRollActiveRef.current = true
+    api.playbackRange = { startTick: cache.getMasterBarStart(score.masterBars[loop.start - 1]), endTick: own.endTick }
+  }, [])
+
   // Starting playback is a user gesture, the moment the click sound may create its audio context.
   const playPause = useCallback(() => {
     unlockClick()
+    applyPreRoll()
     apiRef.current?.playPause()
-  }, [])
+  }, [applyPreRoll])
   const play = useCallback(() => {
     unlockClick()
+    applyPreRoll()
     apiRef.current?.play()
-  }, [])
+  }, [applyPreRoll])
   const pause = useCallback(() => apiRef.current?.pause(), [])
   const stop = useCallback(() => apiRef.current?.stop(), [])
 
@@ -651,6 +718,9 @@ export function useAlphaTab(
     visualMetronome,
     setVisualMetronome,
     subscribeBeat,
+    preRoll,
+    setPreRoll,
+    struggled,
     loadFile,
     selectTrack,
     playPause,

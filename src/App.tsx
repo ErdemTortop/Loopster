@@ -77,6 +77,7 @@ function App() {
       stop: player.stop,
       jumpBars: player.jumpBars,
       toggleLoop: player.toggleLoop,
+      struggled: player.struggled,
       toggleMetronome: player.toggleMetronome,
       changeSpeed: player.changeSpeed,
       toggleRecording: recorder.toggle,
