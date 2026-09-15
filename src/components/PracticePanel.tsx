@@ -5,7 +5,6 @@ const hintClass = 'text-sm text-neutral-400 light:text-neutral-600'
 
 export function PracticePanel({ player, disabled }: { player: Player; disabled: boolean }) {
   const { info, speed, metronome, loop, trainer, round, transpose } = player
-  const barCount = info?.barCount ?? 1
 
   return (
     <fieldset disabled={disabled} className="min-w-0 divide-y divide-neutral-800 light:divide-neutral-200">
@@ -67,34 +66,13 @@ export function PracticePanel({ player, disabled }: { player: Player; disabled: 
         <p className={hintClass}>Giriş sayımı, Çal'a basınca bir ölçü boyunca metronom sayar.</p>
       </Section>
 
-      <Section title="A-B loop">
+      <Section title="Loop">
         <Toggle on={loop.enabled} onClick={player.toggleLoop} className="w-full">
           {loop.enabled ? `Loop açık · ${loop.start + 1}–${loop.end + 1}. ölçüler` : 'Loop kapalı'}
         </Toggle>
-        <div className="flex items-end gap-3">
-          <NumberField
-            label="A (başlangıç)"
-            value={loop.start + 1}
-            min={1}
-            max={barCount}
-            onCommit={(v) => player.setLoopRange(v - 1, Math.max(v - 1, loop.end))}
-          />
-          <span className="pb-3 text-neutral-500">→</span>
-          <NumberField
-            label="B (bitiş)"
-            value={loop.end + 1}
-            min={1}
-            max={barCount}
-            onCommit={(v) => player.setLoopRange(Math.min(loop.start, v - 1), v - 1)}
-          />
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Button onClick={player.markA}>A = {player.currentBar + 1}. ölçü</Button>
-          <Button onClick={player.markB}>B = {player.currentBar + 1}. ölçü</Button>
-        </div>
         <p className={hintClass}>
-          Başlangıç ölçüsüne git (tıkla ya da ← →) ve A'ya bas, bitiş ölçüsüne git ve B'ye bas. Loop B ile açılır.
-          Fareyle birkaç ölçüyü sürükleyerek de seçebilirsin.
+          Notada ölçülerin üzerinden fareyle sürükleyerek zarf oluştur. Zarfın kenarlarındaki tutamaçları çekerek
+          genişlet ya da daralt (tablette parmakla da olur). Loop'u açınca bulunduğun yerde 4 ölçülük bir zarf belirir.
         </p>
       </Section>
 

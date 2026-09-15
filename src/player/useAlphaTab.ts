@@ -38,6 +38,16 @@ export interface TrackMix {
   solo: boolean
 }
 
+/** Bar bounds relative to the alphaTab container, one entry per bar. */
+export interface BarRect {
+  index: number
+  system: number
+  x: number
+  y: number
+  w: number
+  h: number
+}
+
 export const SUPPORTED_EXTENSIONS = ['.gp5', '.gp4', '.gp3', '.gpx', '.gp']
 export const SPEED_MIN = 25
 export const SPEED_MAX = 150
@@ -60,6 +70,7 @@ export function useAlphaTab(
   const apiRef = useRef<alphaTab.AlphaTabApi | null>(null)
   const [apiEpoch, setApiEpoch] = useState(0)
   const [midiEpoch, setMidiEpoch] = useState(0)
+  const [layoutEpoch, setLayoutEpoch] = useState(0)
   const [status, setStatus] = useState<LoadStatus>('idle')
   const [error, setError] = useState<string | null>(null)
   const [info, setInfo] = useState<ScoreInfo | null>(null)
@@ -92,7 +103,7 @@ export function useAlphaTab(
   const roundRef = useRef(0)
   const ownRangeRef = useRef<{ startTick: number; endTick: number } | null>(null)
   const rangeDirtyRef = useRef(true)
-  const downBarRef = useRef<number | null>(null)
+  const loopSetRef = useRef(false)
 
   useEffect(() => {
     const container = containerRef.current
@@ -112,7 +123,7 @@ export function useAlphaTab(
         enableCursor: true,
         enableElementHighlighting: true,
         // Its built-in selection seeks and rewrites playbackRange on every click, which fights
-        // the bar-aligned loop. Clicks and drags are handled via beatMouseDown/Up below instead.
+        // the bar-aligned loop. Clicks and drags on the score are handled by LoopEnvelope instead.
         enableUserInteraction: false,
       },
     })
@@ -138,6 +149,7 @@ export function useAlphaTab(
         setTrackIndex(0)
         setMix(score.tracks.map(() => ({ mute: false, solo: false })))
         setLoop(NO_LOOP)
+        loopSetRef.current = false
         roundRef.current = 0
         setRound(0)
         currentBarRef.current = 0
@@ -146,7 +158,10 @@ export function useAlphaTab(
         setStatus('rendering')
       }),
       api.renderStarted.on(() => setStatus((s) => (s === 'error' ? s : 'rendering'))),
-      api.renderFinished.on(() => setStatus((s) => (s === 'error' ? s : 'ready'))),
+      api.renderFinished.on(() => {
+        setStatus((s) => (s === 'error' ? s : 'ready'))
+        setLayoutEpoch((n) => n + 1)
+      }),
       api.soundFontLoad.on((e) => {
         if (e.total > 0) setSoundFontProgress(e.loaded / e.total)
       }),
@@ -168,26 +183,6 @@ export function useAlphaTab(
         const bar = barAtTick(api, latest.current.trackIndex, e.currentTick)
         if (bar !== null) moveToBar(bar)
         if (e.modifiedTempo > 0) setCurrentBpm(Math.round(e.modifiedTempo))
-      }),
-      // A click moves to the start of that bar; a drag across bars selects them as the loop.
-      api.beatMouseDown.on((beat) => {
-        downBarRef.current = beat.voice.bar.index
-      }),
-      api.beatMouseUp.on((beat) => {
-        const downBar = downBarRef.current
-        downBarRef.current = null
-        if (downBar === null) return
-        const upBar = beat ? beat.voice.bar.index : downBar
-        if (upBar !== downBar) {
-          setLoop({ enabled: true, start: Math.min(downBar, upBar), end: Math.max(downBar, upBar) })
-          return
-        }
-        moveToBar(downBar)
-        const { loop, isPlaying } = latest.current
-        if (loop.enabled && isPlaying && (downBar < loop.start || downBar > loop.end)) return
-        const score = api.score
-        const cache = api.tickCache
-        if (score && cache) api.tickPosition = cache.getMasterBarStart(score.masterBars[downBar])
       }),
       // With isLooping, alphaTab fires playerFinished at the end of every loop pass.
       api.playerFinished.on(() => {
@@ -261,20 +256,6 @@ export function useAlphaTab(
     }
   }, [loop, midiEpoch])
 
-  // Redraw the loop highlight after every render (track switch, resize, new loop).
-  useEffect(() => {
-    const api = apiRef.current
-    const score = api?.score
-    if (!api || !score || !loop.enabled || status !== 'ready') return
-    const staffBars = score.tracks[trackIndex]?.staves[0]?.bars
-    if (!staffBars || staffBars.length === 0) return
-    const a = clamp(loop.start, 0, staffBars.length - 1)
-    const b = clamp(loop.end, a, staffBars.length - 1)
-    const firstBeat = staffBars[a].voices[0]?.beats[0]
-    const lastBeats = staffBars[b].voices[0]?.beats
-    const lastBeat = lastBeats?.[lastBeats.length - 1]
-    if (firstBeat && lastBeat) api.highlightPlaybackRange(firstBeat, lastBeat)
-  }, [loop, trackIndex, status, midiEpoch])
 
   useEffect(() => {
     const api = apiRef.current
@@ -364,17 +345,49 @@ export function useAlphaTab(
   }, [])
 
   const setLoopRange = useCallback((start: number, end: number) => {
+    loopSetRef.current = true
     setLoop({ enabled: true, start: Math.min(start, end), end: Math.max(start, end) })
   }, [])
-  const toggleLoop = useCallback(() => setLoop((l) => ({ ...l, enabled: !l.enabled })), [])
-  // A only marks the start; B closes the range and turns the loop on.
-  const markA = useCallback(() => {
+
+  // Turning the loop on brings back the previous envelope if the cursor is inside it,
+  // otherwise it opens a 4-bar envelope at the cursor.
+  const toggleLoop = useCallback(() => {
     const bar = currentBarRef.current
-    setLoop((l) => ({ ...l, start: bar, end: Math.max(bar, l.end) }))
+    const lastBar = (apiRef.current?.score?.masterBars.length ?? 1) - 1
+    const reuse = loopSetRef.current
+    loopSetRef.current = true
+    setLoop((l) => {
+      if (l.enabled) return { ...l, enabled: false }
+      if (reuse && bar >= l.start && bar <= l.end) return { ...l, enabled: true }
+      return { enabled: true, start: bar, end: Math.min(bar + 3, lastBar) }
+    })
   }, [])
-  const markB = useCallback(() => {
-    const bar = currentBarRef.current
-    setLoop((l) => ({ enabled: true, start: Math.min(bar, l.start), end: bar }))
+
+  const seekToBar = useCallback((bar: number) => {
+    const api = apiRef.current
+    const score = api?.score
+    const cache = api?.tickCache
+    if (!api || !score || !cache) return
+    const target = clamp(bar, 0, score.masterBars.length - 1)
+    currentBarRef.current = target
+    setCurrentBar(target)
+    // While a loop is playing, stay in it; the bar is still selected for reference.
+    const { loop, isPlaying } = latest.current
+    if (loop.enabled && isPlaying && (target < loop.start || target > loop.end)) return
+    api.tickPosition = cache.getMasterBarStart(score.masterBars[target])
+  }, [])
+
+  const getBarRects = useCallback((): BarRect[] => {
+    const lookup = apiRef.current?.boundsLookup
+    if (!lookup) return []
+    const rects: BarRect[] = []
+    for (const system of lookup.staffSystems) {
+      for (const bar of system.bars) {
+        const b = bar.realBounds
+        rects.push({ index: bar.index, system: system.index, x: b.x, y: b.y, w: b.w, h: b.h })
+      }
+    }
+    return rects
   }, [])
 
   const setTrainer = useCallback((patch: Partial<TrainerConfig>) => {
@@ -438,8 +451,9 @@ export function useAlphaTab(
     setCountIn,
     setLoopRange,
     toggleLoop,
-    markA,
-    markB,
+    seekToBar,
+    getBarRects,
+    layoutEpoch,
     setTrainer,
     toggleMute,
     toggleSolo,

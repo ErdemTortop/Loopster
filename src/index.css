@@ -34,8 +34,9 @@ body {
   width: 3px;
 }
 
-.at-selection div {
-  background: rgb(59 130 246 / 0.15);
+/* The loop is shown by LoopEnvelope; alphaTab's own range highlight would double it. */
+.at-selection {
+  display: none;
 }
 
 .at-highlight * {

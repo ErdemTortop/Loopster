@@ -4,8 +4,6 @@ export interface ShortcutActions {
   playPause: () => void
   stop: () => void
   jumpBars: (delta: number) => void
-  markA: () => void
-  markB: () => void
   toggleLoop: () => void
   toggleMetronome: () => void
   changeSpeed: (delta: number) => void
@@ -18,8 +16,6 @@ export const SHORTCUTS: { keys: string[]; label: string }[] = [
   { keys: ['Boşluk'], label: 'Çal / duraklat' },
   { keys: ['Esc'], label: 'Durdur' },
   { keys: ['←', '→'], label: 'Bir ölçü geri / ileri' },
-  { keys: ['A'], label: 'Loop başlangıcı = şu anki ölçü' },
-  { keys: ['B'], label: 'Loop bitişi = şu anki ölçü' },
   { keys: ['L'], label: 'Loop aç / kapa' },
   { keys: ['M'], label: 'Metronom aç / kapa' },
   { keys: ['−', '+'], label: 'Hızı %5 azalt / artır' },
@@ -62,8 +58,6 @@ export function useShortcuts(actions: ShortcutActions, enabled: boolean) {
         Escape: a.stop,
         ArrowLeft: () => a.jumpBars(-1),
         ArrowRight: () => a.jumpBars(1),
-        a: a.markA,
-        b: a.markB,
         l: a.toggleLoop,
         m: a.toggleMetronome,
         '-': () => a.changeSpeed(-5),

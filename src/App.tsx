@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import { FileDropZone } from './components/FileDropZone'
+import { LoopEnvelope } from './components/LoopEnvelope'
 import { PracticePanel } from './components/PracticePanel'
 import { ShortcutsPanel } from './components/ShortcutsPanel'
 import { Button } from './components/ui'
@@ -31,8 +32,6 @@ function App() {
       playPause: player.playPause,
       stop: player.stop,
       jumpBars: player.jumpBars,
-      markA: player.markA,
-      markB: player.markB,
       toggleLoop: player.toggleLoop,
       toggleMetronome: player.toggleMetronome,
       changeSpeed: player.changeSpeed,
@@ -116,7 +115,10 @@ function App() {
               hasScore ? '' : 'pointer-events-none absolute inset-x-0 top-0 opacity-0'
             }`}
           >
-            <div ref={containerRef} />
+            <div className="relative">
+              <div ref={containerRef} />
+              {hasScore && <LoopEnvelope player={player} />}
+            </div>
           </div>
         </main>
 
