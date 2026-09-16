@@ -1,7 +1,13 @@
 import { useI18n } from '../i18n'
 import { FileDropZone } from './FileDropZone'
+import { Button } from './ui'
 
-export function WelcomeScreen({ onFile }: { onFile: (file: File) => void }) {
+interface Props {
+  onFile: (file: File) => void
+  onExample: () => void
+}
+
+export function WelcomeScreen({ onFile, onExample }: Props) {
   const { t } = useI18n()
 
   return (
@@ -16,6 +22,9 @@ export function WelcomeScreen({ onFile }: { onFile: (file: File) => void }) {
         </div>
 
         <FileDropZone onFile={onFile} />
+        <div className="mt-4 flex justify-center">
+          <Button onClick={onExample}>{t.welcome.tryExample}</Button>
+        </div>
 
         <ol className="mt-8 grid gap-3 sm:grid-cols-3">
           {t.welcome.steps.map((step, i) => (

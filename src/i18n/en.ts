@@ -153,6 +153,13 @@ export const en: Messages = {
     ],
     shortcutsBefore: 'Press',
     shortcutsAfter: 'for keyboard shortcuts.',
+    tryExample: 'Try the example',
+  },
+
+  example: {
+    label: 'Example:',
+    banner: 'Bars 3–6 are looped at 75% speed. Press Play, or load your own song with Open file.',
+    loadFailed: 'The example could not be opened.',
   },
 
   fileDrop: {

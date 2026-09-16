@@ -12,8 +12,9 @@ import { SideDrawer, SideRail, type RailItem } from './components/SideRail'
 import { TransportBar } from './components/TransportBar'
 import { Button } from './components/ui'
 import { WelcomeScreen } from './components/WelcomeScreen'
-import { useI18n, type Lang, type Messages } from './i18n'
-import { useAlphaTab, type Player } from './player/useAlphaTab'
+import { isDesktop } from './desktop/bridge'
+import { getLang, useI18n, type Lang, type Messages } from './i18n'
+import { useAlphaTab, type Player, type SongSettings } from './player/useAlphaTab'
 import { useDesktopFile } from './player/useDesktopFile'
 import { useLibrary } from './player/useLibrary'
 import { useNotes } from './player/useNotes'
@@ -27,6 +28,8 @@ type LeftTool = 'notes' | 'library'
 type RightTool = 'pomodoro' | 'recordings'
 
 const recordingRed = '#ff8a7d'
+/** The example opens ready to show the idea: a loop over bars 3–6 at 75% speed. */
+const EXAMPLE_DEFAULTS: SongSettings = { speed: 75, loop: { start: 2, end: 5 } }
 /** Each language is named in itself, so the switch reads right whichever language is active. */
 const LANGUAGES: { code: Lang; name: string }[] = [
   { code: 'tr', name: 'Türkçe' },
@@ -40,6 +43,8 @@ function App() {
   const [shelfOpen, setShelfOpen] = useState(false)
   const [leftTool, setLeftTool] = useState<LeftTool | null>(null)
   const [rightTool, setRightTool] = useState<RightTool | null>(null)
+  const [exampleOpen, setExampleOpen] = useState(false)
+  const [exampleFailed, setExampleFailed] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
   const scrollRef = useRef<HTMLDivElement>(null)
   const player = useAlphaTab(containerRef, scrollRef)
@@ -74,10 +79,36 @@ function App() {
     (file: File) => {
       stopPlayAlong()
       stopRecording()
+      setExampleOpen(false)
       void loadFile(file)
     },
     [stopPlayAlong, stopRecording, loadFile],
   )
+
+  // The bundled exercise, titled in the current interface language.
+  const openExample = useCallback(async () => {
+    setExampleFailed(false)
+    try {
+      const name = `pentatonic-${getLang()}.gp`
+      const response = await fetch(`${import.meta.env.BASE_URL}examples/${name}`)
+      if (!response.ok) throw new Error(`HTTP ${response.status}`)
+      const file = new File([await response.arrayBuffer()], name)
+      stopPlayAlong()
+      stopRecording()
+      setExampleOpen(true)
+      await loadFile(file, { defaults: EXAMPLE_DEFAULTS })
+    } catch {
+      setExampleFailed(true)
+    }
+  }, [stopPlayAlong, stopRecording, loadFile])
+
+  // The browser version is a demo: it opens with the example, so visitors see straight away what Loopster does.
+  const autoOpenedRef = useRef(false)
+  useEffect(() => {
+    if (autoOpenedRef.current || isDesktop()) return
+    autoOpenedRef.current = true
+    void openExample()
+  }, [openExample])
   // Desktop only: the folder of tab files the user practises from, and files opened from Explorer.
   const library = useLibrary(openFile)
   useDesktopFile(openFile)
@@ -281,6 +312,27 @@ function App() {
         </div>
       )}
 
+      {exampleFailed && (
+        <div role="alert" className="relative z-40 border-b border-danger/50 bg-danger/15 px-4 py-3 sm:px-5">
+          <strong className="font-display tracking-wide text-danger uppercase">{t.banner.error}</strong>{' '}
+          {t.example.loadFailed}
+        </div>
+      )}
+      {exampleOpen && hasScore && (
+        <div
+          role="status"
+          className="relative z-40 flex flex-wrap items-center gap-x-3 gap-y-2 border-b border-accent/40 bg-accent/10 px-4 py-2 sm:px-5"
+        >
+          <span className="text-sm">
+            <strong className="font-display tracking-wide text-accent uppercase">{t.example.label}</strong>{' '}
+            {t.example.banner}
+          </span>
+          <Button onClick={() => setExampleOpen(false)} className="ml-auto">
+            {t.common.close}
+          </Button>
+        </div>
+      )}
+
       {pomodoro.phase === 'break' && (
         <div
           role="status"
@@ -303,7 +355,9 @@ function App() {
         <SideRail side="left" items={leftItems} />
 
         <main ref={scrollRef} className="relative min-h-0 min-w-0 flex-1 overflow-auto">
-          {!hasScore && status !== 'loading' && <WelcomeScreen onFile={openFile} />}
+          {!hasScore && status !== 'loading' && (
+            <WelcomeScreen onFile={openFile} onExample={() => void openExample()} />
+          )}
           {status === 'loading' && (
             <div className="flex h-full items-center justify-center gap-3 font-display text-xl tracking-[0.14em] text-muted uppercase">
               <span aria-hidden="true" className="size-2.5 animate-pulse rounded-full bg-led" />

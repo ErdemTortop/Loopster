@@ -152,6 +152,13 @@ export const tr = {
     ],
     shortcutsBefore: 'Klavye kısayolları için',
     shortcutsAfter: 'tuşuna bas.',
+    tryExample: 'Örnek parçayla dene',
+  },
+
+  example: {
+    label: 'Örnek:',
+    banner: "3–6. ölçüler loop'ta, tempo %75. Çal'a bas ya da Dosya aç ile kendi parçanı yükle.",
+    loadFailed: 'Örnek parça açılamadı.',
   },
 
   fileDrop: {

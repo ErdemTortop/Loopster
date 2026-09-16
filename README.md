@@ -27,12 +27,14 @@
 2. The installer is not code-signed, so Windows SmartScreen may warn you: choose **More info → Run anyway**.
 3. The installer associates `.gp`, `.gp3`, `.gp4`, `.gp5` and `.gpx` files with Loopster, so double-clicking one opens it.
 
-The **browser version** needs no installation and is meant for trying Loopster out. The exercise folder,
+The **browser version** needs no installation and is meant for trying Loopster out: it opens with an example
+exercise, already looped over bars 3–6 at 75% speed, so pressing Play is all it takes. The exercise folder,
 double-click opening and recordings saved as files are only in the desktop app.
 
 ## Usage
 
-1. Click **Open a Guitar Pro file**, or drop the file anywhere on the window.
+1. Click **Open a Guitar Pro file**, or drop the file anywhere on the window. No file at hand? **Try the example**
+   opens the bundled exercise.
 2. If the file has several instruments, pick one from the **Track** menu in the top bar.
 3. Press **Play**. The note being played is highlighted and the page scrolls along.
 4. Drag across the bars of the hard part: a loop envelope appears and playback repeats that range.

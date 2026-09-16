@@ -27,12 +27,14 @@
 2. Kurulum dosyası imzalı olmadığı için Windows SmartScreen uyarı gösterebilir: **Daha fazla bilgi → Yine de çalıştır**.
 3. Kurulum `.gp`, `.gp3`, `.gp4`, `.gp5` ve `.gpx` dosyalarını Loopster'a bağlar; dosyaya çift tıklamak yeterli.
 
-**Tarayıcı sürümü** kurulum gerektirmez ve denemek içindir. Egzersiz klasörü, çift tıkla açma ve kayıtların diske
-yazılması yalnızca masaüstü uygulamasında var.
+**Tarayıcı sürümü** kurulum gerektirmez ve denemek içindir: bir örnek egzersizle, 3–6. ölçüler loop'ta ve %75 tempoda
+hazır açılır; Çal'a basmak yeterli. Egzersiz klasörü, çift tıkla açma ve kayıtların diske yazılması yalnızca masaüstü
+uygulamasında var.
 
 ## Kullanım
 
-1. **Guitar Pro dosyası aç** kutusuna tıkla ya da dosyayı pencerenin herhangi bir yerine sürükle.
+1. **Guitar Pro dosyası aç** kutusuna tıkla ya da dosyayı pencerenin herhangi bir yerine sürükle. Elinde dosya yoksa
+   **Örnek parçayla dene** hazır egzersizi açar.
 2. Dosyada birden fazla enstrüman varsa üst çubuktaki **Parça** menüsünden seç.
 3. **Çal** ile başlat. Çalınan nota vurgulanır, sayfa kendiliğinden kayar.
 4. Zor bölümün ölçülerinin üzerinden fareyle sürükle: loop zarfı oluşur, çalma o aralıkta döner.

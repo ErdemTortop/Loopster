@@ -179,7 +179,7 @@ function loadClickOffset(): number {
 /** Per-song practice settings, keyed by the song fingerprint like notes and recordings are. */
 const SONG_SETTINGS_PREFIX = 'loopster.song.'
 
-interface SongSettings {
+export interface SongSettings {
   speed: number
   loop: { start: number; end: number } | null
 }
@@ -296,6 +296,8 @@ export function useAlphaTab(
   const [songId, setSongId] = useState<string | null>(null)
   /** Fingerprint of the song being loaded, known before its score arrives. */
   const pendingSongRef = useRef<string | null>(null)
+  /** Tempo and loop to start with when the song being loaded has none remembered yet. */
+  const pendingDefaultsRef = useRef<SongSettings | null>(null)
   /** The song whose remembered tempo and loop have been applied; also gates saving them back. */
   const restoredSongRef = useRef<string | null>(null)
   const [view, setView] = useState<ViewState>(loadView)
@@ -389,7 +391,7 @@ export function useAlphaTab(
         // been practised starts clean instead of inheriting the previous song's tempo, and a loop
         // reaching past the end belongs to a different version of the file, so it is dropped.
         const pendingSong = pendingSongRef.current
-        const saved = pendingSong ? loadSongSettings(pendingSong) : null
+        const saved = (pendingSong ? loadSongSettings(pendingSong) : null) ?? pendingDefaultsRef.current
         restoredSongRef.current = pendingSong
         setSpeedState(saved?.speed ?? 100)
         const savedLoop = saved?.loop && saved.loop.end < score.masterBars.length ? saved.loop : null
@@ -734,7 +736,9 @@ export function useAlphaTab(
     }
   }, [])
 
-  const loadFile = useCallback(async (file: File) => {
+  /** `defaults` sets the tempo and loop of a song that has never been practised, like the example. */
+  const loadFile = useCallback(async (file: File, options?: { defaults?: SongSettings }) => {
+    pendingDefaultsRef.current = options?.defaults ?? null
     const api = apiRef.current
     if (!api) return
 
