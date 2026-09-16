@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { desktopApi, isDesktop, type LibraryItem, type LibrarySnapshot } from '../desktop/bridge'
+import { messages } from '../i18n'
 
 /**
  * The desktop app's exercise folder: a folder of tab files the user picks once, listed for one-click
@@ -28,7 +29,7 @@ export function useLibrary(onOpen: (file: File) => void) {
         if (!cancelled && result) setSnapshot(result)
       })
       .catch(() => {
-        if (!cancelled) setError('Önceki klasör açılamadı.')
+        if (!cancelled) setError(messages().library.restoreFailed)
       })
       .finally(() => {
         if (!cancelled) setBusy(false)
@@ -38,7 +39,7 @@ export function useLibrary(onOpen: (file: File) => void) {
     }
   }, [supported])
 
-  const run = useCallback(async (action: () => Promise<LibrarySnapshot | null>, failure: string) => {
+  const run = useCallback(async (action: () => Promise<LibrarySnapshot | null>, failure: () => string) => {
     setBusy(true)
     setError(null)
     try {
@@ -46,20 +47,29 @@ export function useLibrary(onOpen: (file: File) => void) {
       if (result) setSnapshot(result)
       return result
     } catch {
-      setError(failure)
+      setError(failure())
       return null
     } finally {
       setBusy(false)
     }
   }, [])
 
+  // Failure texts are read when they are needed, so they follow a language switch.
   const pick = useCallback(
-    () => run(() => desktopApi()!.library.pick(), 'Klasör açılamadı.'),
+    () =>
+      run(
+        () => desktopApi()!.library.pick(messages().library.pickFolderDialog),
+        () => messages().library.pickFailed,
+      ),
     [run],
   )
 
   const refresh = useCallback(
-    () => run(() => desktopApi()!.library.refresh(), 'Klasör yeniden okunamadı.'),
+    () =>
+      run(
+        () => desktopApi()!.library.refresh(),
+        () => messages().library.refreshFailed,
+      ),
     [run],
   )
 
@@ -82,7 +92,7 @@ export function useLibrary(onOpen: (file: File) => void) {
       onOpenRef.current(new File([file.data as BlobPart], file.name))
       setOpenPath(item.path)
     } catch {
-      setError(`"${item.name}" okunamadı. Dosya taşınmış ya da silinmiş olabilir.`)
+      setError(messages().library.readFailed(item.name))
     }
   }, [])
 

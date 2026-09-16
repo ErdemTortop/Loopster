@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { useI18n } from '../i18n'
 import { SUPPORTED_EXTENSIONS } from '../player/useAlphaTab'
 import { FolderIcon } from './icons'
 import { Button } from './ui'
@@ -9,6 +10,7 @@ interface Props {
 }
 
 export function FileDropZone({ onFile, compact = false }: Props) {
+  const { t } = useI18n()
   const inputRef = useRef<HTMLInputElement>(null)
   const [dragging, setDragging] = useState(false)
 
@@ -67,14 +69,14 @@ export function FileDropZone({ onFile, compact = false }: Props) {
       {dragging && (
         <div className="pointer-events-none fixed inset-0 z-50 flex items-center justify-center bg-bg/80 p-6 backdrop-blur-sm">
           <div className="flex h-full w-full items-center justify-center rounded-3xl border-4 border-dashed border-accent">
-            <span className="font-display text-5xl font-semibold tracking-wide text-accent uppercase">Dosyayı bırak</span>
+            <span className="font-display text-5xl font-semibold tracking-wide text-accent uppercase">{t.fileDrop.dropHere}</span>
           </div>
         </div>
       )}
       {compact ? (
         <Button onClick={openPicker}>
           <FolderIcon />
-          <span className="hidden sm:inline">Dosya aç</span>
+          <span className="hidden sm:inline">{t.fileDrop.open}</span>
         </Button>
       ) : (
         <button
@@ -83,8 +85,8 @@ export function FileDropZone({ onFile, compact = false }: Props) {
           className="flex w-full flex-col items-center gap-3 rounded-2xl border-2 border-dashed border-line bg-surface/85 px-6 py-12 text-center transition-colors hover:border-accent hover:bg-surface"
         >
           <FolderIcon className="size-12 text-accent" />
-          <span className="font-display text-3xl font-semibold tracking-wide uppercase">Guitar Pro dosyası aç</span>
-          <span className="text-muted">Tıkla ya da dosyayı sayfanın herhangi bir yerine sürükle</span>
+          <span className="font-display text-3xl font-semibold tracking-wide uppercase">{t.fileDrop.openGuitarPro}</span>
+          <span className="text-muted">{t.fileDrop.hint}</span>
           <span className="font-mono text-xs tracking-wider text-muted">{SUPPORTED_EXTENSIONS.join('  ')}</span>
         </button>
       )}

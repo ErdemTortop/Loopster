@@ -1,5 +1,6 @@
 import * as alphaTab from '@coderline/alphatab'
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
+import { messages } from '../i18n'
 import { cancelClicks, clickTime, playClick, setClickContext, unlockClick } from './clickSound'
 
 type Score = alphaTab.model.Score
@@ -537,7 +538,7 @@ export function useAlphaTab(
       }),
       api.error.on((e: Error) => {
         console.error('[alphaTab]', e)
-        setError(`Dosya açılamadı ya da çalınamadı. Ayrıntı: ${e.message || String(e)}`)
+        setError(messages().errors.playbackFailed(e.message || String(e)))
         setStatus('error')
       }),
     ]
@@ -739,7 +740,7 @@ export function useAlphaTab(
 
     const name = file.name.toLowerCase()
     if (!SUPPORTED_EXTENSIONS.some((ext) => name.endsWith(ext))) {
-      setError(`"${file.name}" desteklenmeyen bir dosya türü. Desteklenenler: ${SUPPORTED_EXTENSIONS.join(', ')}`)
+      setError(messages().errors.unsupportedFile(file.name, SUPPORTED_EXTENSIONS.join(', ')))
       setStatus('error')
       return
     }
@@ -759,11 +760,11 @@ export function useAlphaTab(
       setSongId(id)
       if (!api.load(data, [0])) {
         setSongId(null)
-        setError(`"${file.name}" açılamadı. Dosya biçimi tanınmadı.`)
+        setError(messages().errors.unrecognizedFile(file.name))
         setStatus('error')
       }
     } catch (e) {
-      setError(`"${file.name}" okunamadı: ${e instanceof Error ? e.message : String(e)}`)
+      setError(messages().errors.unreadableFile(file.name, e instanceof Error ? e.message : String(e)))
       setStatus('error')
     }
   }, [])

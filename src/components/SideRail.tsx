@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useI18n } from '../i18n'
 import { Button } from './ui'
 
 export interface RailItem {
@@ -19,9 +20,10 @@ type Side = 'left' | 'right'
  * so opening a tool never changes the notation width (which would force an alphaTab re-layout).
  */
 export function SideRail({ side, items }: { side: Side; items: RailItem[] }) {
+  const { t } = useI18n()
   return (
     <nav
-      aria-label={side === 'left' ? 'Sol araçlar' : 'Sağ araçlar'}
+      aria-label={side === 'left' ? t.rails.left : t.rails.right}
       className={`relative z-[1200] flex w-16 shrink-0 flex-col items-center gap-2 border-line bg-surface py-3 ${
         side === 'left' ? 'border-r' : 'border-l'
       }`}
@@ -58,6 +60,7 @@ interface DrawerProps {
 
 /** Panel that slides out from next to a rail, over the score. */
 export function SideDrawer({ side, open, title, onClose, children }: DrawerProps) {
+  const { t } = useI18n()
   const position = side === 'left' ? 'left-16 border-r' : 'right-16 border-l'
   const shadow = side === 'left' ? 'shadow-[12px_0_40px_rgb(0_0_0/0.45)]' : 'shadow-[-12px_0_40px_rgb(0_0_0/0.45)]'
   const closed = side === 'left' ? '-translate-x-full' : 'translate-x-full'
@@ -72,7 +75,7 @@ export function SideDrawer({ side, open, title, onClose, children }: DrawerProps
     >
       <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-3">
         <h2 className="font-display text-xl font-semibold tracking-[0.12em] uppercase">{title}</h2>
-        <Button onClick={onClose}>Kapat</Button>
+        <Button onClick={onClose}>{t.common.close}</Button>
       </div>
       <div className="min-h-0 flex-1 overflow-y-auto">{children}</div>
     </aside>

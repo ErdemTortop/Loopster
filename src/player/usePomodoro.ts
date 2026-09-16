@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { messages } from '../i18n'
 
 export type PomodoroPhase = 'idle' | 'work' | 'break'
 
@@ -120,7 +121,8 @@ export function usePomodoro({ onWorkEnd }: { onWorkEnd: () => void }) {
   const shownMs = phase === 'idle' ? settings.workMin * MINUTE : remainingMs
 
   useEffect(() => {
-    document.title = running ? `${formatClock(shownMs)} · ${phase === 'break' ? 'Mola' : 'Odak'} · Loopster` : 'Loopster'
+    const label = phase === 'break' ? messages().pomodoro.breakTime : messages().pomodoro.focus
+    document.title = running ? `${formatClock(shownMs)} · ${label} · Loopster` : 'Loopster'
   }, [running, shownMs, phase])
 
   const start = useCallback(() => {

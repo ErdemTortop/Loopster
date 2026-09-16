@@ -15,17 +15,20 @@ export interface ShortcutActions {
   closeOverlay: () => boolean
 }
 
-export const SHORTCUTS: { keys: string[]; label: string }[] = [
-  { keys: ['Boşluk'], label: 'Çal / duraklat' },
-  { keys: ['Esc'], label: 'Durdur (açık bir panel ya da ayarlar varsa önce onları kapatır)' },
-  { keys: ['←', '→'], label: 'Bir ölçü geri / ileri' },
-  { keys: ['L'], label: 'Loop aç / kapa' },
-  { keys: ['Z'], label: 'Zorlandım: hızı bir adım düşür, tur sayacını sıfırla' },
-  { keys: ['M'], label: 'Metronom aç / kapa' },
-  { keys: ['−', '+'], label: 'Hızı %5 azalt / artır' },
-  { keys: ['R'], label: 'Kayda başla / durdur' },
-  { keys: ['P'], label: 'Alttaki ayarları aç / kapa' },
-  { keys: ['?'], label: 'Kısayol listesini aç / kapa' },
+export type ShortcutId = 'playPause' | 'stop' | 'jumpBars' | 'loop' | 'struggled' | 'metronome' | 'speed' | 'record' | 'panel' | 'help'
+
+/** The help list. `space` is a placeholder for the translated name of the space bar. */
+export const SHORTCUTS: { keys: string[]; id: ShortcutId }[] = [
+  { keys: ['space'], id: 'playPause' },
+  { keys: ['Esc'], id: 'stop' },
+  { keys: ['←', '→'], id: 'jumpBars' },
+  { keys: ['L'], id: 'loop' },
+  { keys: ['Z'], id: 'struggled' },
+  { keys: ['M'], id: 'metronome' },
+  { keys: ['−', '+'], id: 'speed' },
+  { keys: ['R'], id: 'record' },
+  { keys: ['P'], id: 'panel' },
+  { keys: ['?'], id: 'help' },
 ]
 
 function isTyping(target: EventTarget | null): boolean {

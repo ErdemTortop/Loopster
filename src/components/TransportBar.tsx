@@ -1,3 +1,4 @@
+import { useI18n } from '../i18n'
 import { SPEED_MAX, SPEED_MIN, type Player } from '../player/useAlphaTab'
 import { formatClock } from '../player/usePomodoro'
 import type { Recorder } from '../player/useRecorder'
@@ -23,6 +24,7 @@ const recordingRed = '#ff8a7d'
 
 /** Always-visible controls, sized for reaching over with a guitar in your lap. */
 export function TransportBar({ player, recorder, canPlay, statusMessage, shelfOpen, onToggleShelf }: Props) {
+  const { t } = useI18n()
   const recording = recorder.state === 'recording'
   const { info, loop, speed } = player
   const hasScore = info !== null
@@ -41,7 +43,7 @@ export function TransportBar({ player, recorder, canPlay, statusMessage, shelfOp
             type="button"
             onClick={player.playPause}
             disabled={!canPlay}
-            aria-label={player.isPlaying ? 'Duraklat' : 'Çal'}
+            aria-label={player.isPlaying ? t.transport.pause : t.transport.play}
             className="inline-flex size-16 items-center justify-center rounded-full border-2 border-accent bg-accent text-accent-ink shadow-[0_0_24px_color-mix(in_oklab,var(--color-accent)_40%,transparent)] transition-transform active:scale-95 disabled:cursor-not-allowed disabled:border-line disabled:bg-raised disabled:text-muted disabled:shadow-none"
           >
             {player.isPlaying ? <PauseIcon /> : <PlayIcon className="ml-1 size-7" />}
@@ -50,7 +52,7 @@ export function TransportBar({ player, recorder, canPlay, statusMessage, shelfOp
             type="button"
             onClick={player.stop}
             disabled={!canPlay}
-            aria-label="Durdur"
+            aria-label={t.transport.stop}
             className={`${keyClass} size-14 rounded-xl`}
           >
             <StopIcon />
@@ -60,7 +62,7 @@ export function TransportBar({ player, recorder, canPlay, statusMessage, shelfOp
               type="button"
               onClick={() => player.jumpBars(-1)}
               disabled={!canPlay}
-              aria-label="Önceki ölçü"
+              aria-label={t.transport.previousBar}
               className={`${keyClass} h-14 w-12 rounded-l-xl`}
             >
               <StepBackIcon />
@@ -69,7 +71,7 @@ export function TransportBar({ player, recorder, canPlay, statusMessage, shelfOp
               type="button"
               onClick={() => player.jumpBars(1)}
               disabled={!canPlay}
-              aria-label="Sonraki ölçü"
+              aria-label={t.transport.nextBar}
               className={`${keyClass} -ml-px h-14 w-12 rounded-r-xl`}
             >
               <StepForwardIcon />
@@ -80,8 +82,8 @@ export function TransportBar({ player, recorder, canPlay, statusMessage, shelfOp
             onClick={recorder.toggle}
             disabled={!hasScore || !recorder.supported || recorder.state === 'requesting'}
             aria-pressed={recording}
-            aria-label={recording ? 'Kaydı durdur' : 'Kayda başla'}
-            title="Mikrofonla kaydet (R)"
+            aria-label={recording ? t.transport.stopRecording : t.transport.startRecording}
+            title={t.transport.recordTitle}
             className={`${keyClass} size-14 rounded-xl ${recording ? 'border-danger' : ''}`}
           >
             <span
@@ -100,7 +102,7 @@ export function TransportBar({ player, recorder, canPlay, statusMessage, shelfOp
               style={{ color: recordingRed }}
             >
               <span aria-hidden="true" className="size-1.5 animate-pulse rounded-full bg-danger" />
-              Kayıt
+              {t.transport.recording}
             </span>
             <span className="led mt-1 text-xl leading-none font-semibold" style={{ color: recordingRed }}>
               {formatClock(recorder.elapsedMs)}
@@ -109,7 +111,7 @@ export function TransportBar({ player, recorder, canPlay, statusMessage, shelfOp
           </div>
         )}
 
-        <Readout label="Ölçü">
+        <Readout label={t.transport.bar}>
           {hasScore ? (
             <>
               {String(player.currentBar + 1).padStart(barDigits, '0')}
@@ -133,22 +135,22 @@ export function TransportBar({ player, recorder, canPlay, statusMessage, shelfOp
             type="button"
             onClick={() => player.changeSpeed(-5)}
             disabled={!hasScore || speed <= SPEED_MIN}
-            aria-label="Hızı yüzde 5 azalt"
+            aria-label={t.transport.slower}
             className={`${stepperClass} border-r border-line`}
           >
             −
           </button>
           <div className="flex min-w-30 flex-col justify-center px-3 text-center">
             <span className="font-display text-[0.7rem] leading-none font-semibold tracking-[0.2em] text-[#8d877c] uppercase">
-              {bpm ? `Tempo · ${bpm} BPM` : 'Tempo'}
+              {bpm ? t.transport.tempoBpm(bpm) : t.transport.tempo}
             </span>
-            <span className="led mt-1 text-2xl leading-none font-semibold">%{speed}</span>
+            <span className="led mt-1 text-2xl leading-none font-semibold">{t.common.percent(speed)}</span>
           </div>
           <button
             type="button"
             onClick={() => player.changeSpeed(5)}
             disabled={!hasScore || speed >= SPEED_MAX}
-            aria-label="Hızı yüzde 5 artır"
+            aria-label={t.transport.faster}
             className={`${stepperClass} border-l border-line`}
           >
             +
@@ -164,23 +166,25 @@ export function TransportBar({ player, recorder, canPlay, statusMessage, shelfOp
         >
           <LedDot on={loop.enabled} />
           <span className="flex flex-col items-start leading-tight">
-            <span className="font-display text-sm font-semibold tracking-[0.18em] uppercase">Loop</span>
+            <span className="font-display text-sm font-semibold tracking-[0.18em] uppercase">{t.transport.loop}</span>
             <span className="font-mono text-sm text-muted tabular-nums">
-              {loop.enabled ? `${loop.start + 1}–${loop.end + 1}` : 'kapalı'}
+              {loop.enabled ? `${loop.start + 1}–${loop.end + 1}` : t.transport.loopOff}
             </span>
           </span>
         </button>
-        {loop.enabled && <Readout label="Tur">{player.round}</Readout>}
+        {loop.enabled && <Readout label={t.transport.round}>{player.round}</Readout>}
         {loop.enabled && (
           <button
             type="button"
             onClick={player.struggled}
             disabled={speed <= SPEED_MIN}
-            title="Zorlandım (Z): hızı bir adım düşürür, tur sayacını sıfırlar"
+            title={t.transport.struggledTitle}
             className={`${keyClass} h-14 flex-col gap-1 rounded-xl px-3 leading-none`}
           >
-            <span className="font-display text-sm font-semibold tracking-[0.14em] uppercase">Zorlandım</span>
-            <span className="font-mono text-xs text-muted">−%{player.trainer.enabled ? player.trainer.stepPct : 5}</span>
+            <span className="font-display text-sm font-semibold tracking-[0.14em] uppercase">{t.transport.struggled}</span>
+            <span className="font-mono text-xs text-muted">
+              {t.transport.struggledStep(player.trainer.enabled ? player.trainer.stepPct : 5)}
+            </span>
           </button>
         )}
 
@@ -191,13 +195,13 @@ export function TransportBar({ player, recorder, canPlay, statusMessage, shelfOp
             onClick={onToggleShelf}
             aria-expanded={shelfOpen}
             aria-controls="settings-shelf"
-            title="Ayarlar (P)"
+            title={t.transport.settingsTitle}
             className={`${keyClass} h-14 gap-2 rounded-xl px-4 font-display text-base font-semibold tracking-wide uppercase ${
               shelfOpen ? 'border-accent text-accent' : ''
             }`}
           >
             <SlidersIcon />
-            Ayarlar
+            {t.transport.settings}
           </button>
         </div>
       </div>

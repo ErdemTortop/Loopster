@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { messages } from '../i18n'
 import type { Recording, RecordingSync } from './recordingsDb'
 import { recordingsStore } from './recordingsStore'
 import type { BeatEvent } from './useAlphaTab'
@@ -81,17 +82,14 @@ function loadSync(): boolean {
 
 function micErrorMessage(error: unknown): string {
   const name = error instanceof DOMException ? error.name : ''
-  if (name === 'NotAllowedError' || name === 'SecurityError') {
-    return 'Mikrofon izni verilmedi. Adres çubuğundaki izin simgesinden mikrofona izin verip tekrar dene.'
-  }
-  if (name === 'NotFoundError' || name === 'OverconstrainedError') {
-    return 'Mikrofon bulunamadı. Bilgisayara bir mikrofon ya da ses kartı bağlı mı?'
-  }
-  if (name === 'NotReadableError') return 'Mikrofon açılamadı; başka bir uygulama kullanıyor olabilir.'
-  return `Mikrofon açılamadı: ${error instanceof Error ? error.message : String(error)}`
+  const text = messages().errors
+  if (name === 'NotAllowedError' || name === 'SecurityError') return text.micDenied
+  if (name === 'NotFoundError' || name === 'OverconstrainedError') return text.micMissing
+  if (name === 'NotReadableError') return text.micBusy
+  return text.micFailed(error instanceof Error ? error.message : String(error))
 }
 
-/** Records the microphone per song and keeps the takes in IndexedDB. */
+/** Records the microphone per song; takes go to the recordings store (browser storage or files). */
 export function useRecorder({ songId, songTitle, getContext, onSyncStart, onSyncStop, subscribeBeat }: Options) {
   const supported = isSupported()
   const [state, setState] = useState<RecorderState>('idle')
@@ -120,8 +118,8 @@ export function useRecorder({ songId, songTitle, getContext, onSyncStart, onSync
         if (!cancelled) {
           setError(
             recordingsStore.onDisk
-              ? 'Kayıtlar okunamadı; kayıt klasörüne erişilemiyor olabilir.'
-              : 'Kayıtlar okunamadı; tarayıcı depolaması kullanılamıyor olabilir.',
+              ? messages().errors.listOnDisk
+              : messages().errors.listInBrowser,
           )
         }
       })
@@ -153,7 +151,7 @@ export function useRecorder({ songId, songTitle, getContext, onSyncStart, onSync
   const start = useCallback(async () => {
     if (sessionRef.current || !songId) return
     if (!supported) {
-      setError('Bu tarayıcı ses kaydını desteklemiyor ya da sayfa güvenli bir bağlantıda (https) açılmamış.')
+      setError(messages().errors.recordingUnsupported)
       return
     }
     setError(null)
@@ -178,7 +176,7 @@ export function useRecorder({ songId, songTitle, getContext, onSyncStart, onSync
     } catch {
       stream.getTracks().forEach((track) => track.stop())
       setState('idle')
-      setError('Kayıt başlatılamadı; bu tarayıcı mikrofon kaydını bu biçimde yapamıyor.')
+      setError(messages().errors.recorderFormat)
       return
     }
     const chunks: Blob[] = []
@@ -244,7 +242,7 @@ export function useRecorder({ songId, songTitle, getContext, onSyncStart, onSync
       void audio?.close()
       const blob = new Blob(chunks, { type: recorder.mimeType || mimeType || 'audio/webm' })
       if (blob.size === 0) {
-        setError('Kayıt boş kaldı; mikrofonun ses aldığından emin ol.')
+        setError(messages().errors.recordingEmpty)
         return
       }
       const take: Recording = {
@@ -263,8 +261,8 @@ export function useRecorder({ songId, songTitle, getContext, onSyncStart, onSync
       } catch {
         setError(
           recordingsStore.onDisk
-            ? 'Kayıt diske yazılamadı; klasöre yazma izni ya da yeterli yer olmayabilir.'
-            : 'Kayıt tarayıcıya kaydedilemedi; depolama alanı dolmuş olabilir.',
+            ? messages().errors.saveOnDisk
+            : messages().errors.saveInBrowser,
         )
       }
     }
@@ -277,7 +275,7 @@ export function useRecorder({ songId, songTitle, getContext, onSyncStart, onSync
       stream.getTracks().forEach((track) => track.stop())
       void audio?.close()
       setState('idle')
-      setError('Kayıt başlatılamadı; mikrofon başka bir uygulama tarafından kullanılıyor ya da bağlantısı kesilmiş olabilir.')
+      setError(messages().errors.recorderStart)
       return
     }
     sessionRef.current = { recorder, stream, audio, analyser }
@@ -317,7 +315,7 @@ export function useRecorder({ songId, songTitle, getContext, onSyncStart, onSync
       await recordingsStore.remove(recording)
       setLoaded((prev) => ({ ...prev, items: prev.items.filter((r) => r.id !== recording.id) }))
     } catch {
-      setError('Kayıt silinemedi.')
+      setError(messages().errors.deleteFailed)
     }
   }, [])
 

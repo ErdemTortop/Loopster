@@ -1,4 +1,5 @@
 import { useRef, useState, type PointerEvent as ReactPointerEvent } from 'react'
+import { useI18n } from '../i18n'
 import type { BarRect, Player } from '../player/useAlphaTab'
 
 interface Range {
@@ -34,6 +35,7 @@ const TAP_SLOP = 8
  * A click or tap on a bar moves the cursor there; a finger drag on the score still scrolls.
  */
 export function LoopEnvelope({ player }: { player: Player }) {
+  const { t } = useI18n()
   const { loop, getBarRects, setLoopRange, seekToBar } = player
   // Read on every render; App re-renders once alphaTab publishes new bounds (layoutEpoch).
   const rects = getBarRects()
@@ -184,7 +186,7 @@ export function LoopEnvelope({ player }: { player: Player }) {
           >
             {s.first && (
               <span className="absolute -top-3 left-4 rounded bg-accent px-2 py-0.5 font-display text-sm leading-none font-semibold tracking-[0.12em] whitespace-nowrap text-accent-ink uppercase">
-                Loop {range.start + 1}–{range.end + 1}
+                {t.common.loopRange(range.start + 1, range.end + 1)}
               </span>
             )}
             {s.first && <Handle side="start" />}
@@ -196,10 +198,11 @@ export function LoopEnvelope({ player }: { player: Player }) {
 }
 
 function Handle({ side }: { side: 'start' | 'end' }) {
+  const { t } = useI18n()
   return (
     <div
       data-handle={side}
-      title={side === 'start' ? 'Loop başlangıcını sürükle' : 'Loop bitişini sürükle'}
+      title={side === 'start' ? t.loopEnvelope.dragStart : t.loopEnvelope.dragEnd}
       className={`pointer-events-auto absolute top-0 bottom-0 flex w-10 cursor-ew-resize touch-none items-center justify-center ${
         side === 'start' ? '-left-5' : '-right-5'
       }`}

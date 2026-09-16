@@ -56,7 +56,7 @@ interface DesktopApi {
     reveal: (path: string) => Promise<boolean>
   }
   library: {
-    pick: () => Promise<LibrarySnapshot | null>
+    pick: (dialogTitle: string) => Promise<LibrarySnapshot | null>
     restore: () => Promise<LibrarySnapshot | null>
     refresh: () => Promise<LibrarySnapshot | null>
     forget: () => Promise<boolean>

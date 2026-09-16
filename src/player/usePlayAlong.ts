@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
+import { messages } from '../i18n'
 import type { Recording } from './recordingsDb'
 import { recordingsStore } from './recordingsStore'
 import { clamp, type LoopState, type Player } from './useAlphaTab'
@@ -144,7 +145,7 @@ export function usePlayAlong(player: Player) {
         buffer = await ctx.decodeAudioData(await audio.arrayBuffer())
       } catch {
         setPreparingId(null)
-        setError('Kayıt açılamadı; bu tarayıcı kaydın biçimini çözemiyor olabilir.')
+        setError(messages().errors.playAlongDecode)
         return
       }
 

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState, type RefObject } from 'react'
+import { useI18n } from '../i18n'
 import { urlFor, type Recording } from '../player/recordingsDb'
 import { recordingsStore } from '../player/recordingsStore'
 import { NUDGE_LIMIT_MS, type PlayAlong } from '../player/usePlayAlong'
@@ -34,6 +35,7 @@ interface Props {
 const smallLabelClass = 'font-display text-xs font-semibold tracking-[0.14em] text-muted uppercase'
 
 export function RecordingsSection({ recorder, playAlong, songTitle }: Props) {
+  const { t } = useI18n()
   const recording = recorder.state === 'recording'
   const anySynced = recorder.recordings.some((take) => take.sync)
   const [folder, setFolder] = useState<string | null>(null)
@@ -57,21 +59,25 @@ export function RecordingsSection({ recorder, playAlong, songTitle }: Props) {
           onClick={recorder.toggle}
           disabled={!recorder.supported || recorder.state === 'requesting'}
         >
-          {recording ? 'Kaydı durdur' : recorder.state === 'requesting' ? 'İzin bekleniyor…' : 'Kayda başla'}
+          {recording
+            ? t.recordings.stop
+            : recorder.state === 'requesting'
+              ? t.recordings.waitingForPermission
+              : t.recordings.start}
         </Toggle>
         <Toggle on={recorder.syncPlayback} onClick={() => recorder.setSyncPlayback(!recorder.syncPlayback)}>
-          Tab da çalsın
+          {t.recordings.playTabToo}
         </Toggle>
       </div>
       {!recorder.supported && (
-        <p className="text-sm text-muted">Bu tarayıcıda ses kaydı kullanılamıyor (https ya da localhost gerekir).</p>
+        <p className="text-sm text-muted">{t.recordings.unsupported}</p>
       )}
 
       {anySynced && (
         <div className="space-y-2 rounded-lg border border-line bg-bg/40 p-3">
-          <p className={smallLabelClass}>Tab ile birlikte dinleme</p>
+          <p className={smallLabelClass}>{t.recordings.playAlongHeading}</p>
           <label className="flex items-center gap-2 text-sm">
-            <span className="w-12 text-muted">Kayıt</span>
+            <span className="w-12 text-muted">{t.recordings.balanceRecording}</span>
             <input
               type="range"
               min={-100}
@@ -80,14 +86,14 @@ export function RecordingsSection({ recorder, playAlong, songTitle }: Props) {
               value={Math.round(playAlong.balance * 100)}
               onChange={(e) => playAlong.setBalance(Number(e.target.value) / 100)}
               onDoubleClick={() => playAlong.setBalance(0)}
-              aria-label="Kayıt ve tab ses dengesi"
-              title="Çift tıkla: ikisi eşit"
+              aria-label={t.recordings.balanceLabel}
+              title={t.recordings.balanceTitle}
               className="h-8 min-w-0 flex-1 accent-accent"
             />
-            <span className="w-8 text-right text-muted">Tab</span>
+            <span className="w-8 text-right text-muted">{t.recordings.balanceTab}</span>
           </label>
-          <label className="flex items-center gap-2 text-sm" title="Mikrofon gecikmesini düzeltmek için. + kaydı geciktirir, − öne alır.">
-            <span className="w-12 text-muted">Kaydır</span>
+          <label className="flex items-center gap-2 text-sm" title={t.recordings.nudgeTitle}>
+            <span className="w-12 text-muted">{t.recordings.nudge}</span>
             <input
               type="range"
               min={-NUDGE_LIMIT_MS}
@@ -96,7 +102,7 @@ export function RecordingsSection({ recorder, playAlong, songTitle }: Props) {
               value={playAlong.nudgeMs}
               onChange={(e) => playAlong.setNudge(Number(e.target.value))}
               onDoubleClick={() => playAlong.setNudge(0)}
-              aria-label="Kayıt zamanlamasını kaydır"
+              aria-label={t.recordings.nudgeLabel}
               className="h-8 min-w-0 flex-1 accent-accent"
             />
             <span className="led w-16 text-right text-sm">
@@ -121,14 +127,12 @@ export function RecordingsSection({ recorder, playAlong, songTitle }: Props) {
           ))}
         </ul>
       ) : (
-        <p className="text-sm text-muted">Bu parça için henüz kayıt yok. Kayda başla ya da R tuşuna bas.</p>
+        <p className="text-sm text-muted">{t.recordings.empty}</p>
       )}
 
       <p className="text-xs text-muted">
-        {recordingsStore.onDisk
-          ? `Kayıtlar dosya olarak ${folder ?? 'Belgeler klasöründe'} tutulur; silinenler geri dönüşüm kutusuna gider. `
-          : 'Kayıtlar bu tarayıcıda saklanır. '}
-        Hoparlörden çalan tab da mikrofona girer; sadece kendi çalışını kaydetmek için kulaklık kullan.
+        {recordingsStore.onDisk ? t.recordings.storedOnDisk(folder) : t.recordings.storedInBrowser}
+        {t.recordings.headphonesHint}
       </p>
     </div>
   )
@@ -142,6 +146,7 @@ interface ItemProps {
 }
 
 function RecordingItem({ take, songTitle, playAlong, onDelete }: ItemProps) {
+  const { t, locale } = useI18n()
   const playingAlong = playAlong.playingId === take.id
   const preparing = playAlong.preparingId === take.id
   const [confirming, setConfirming] = useState(false)
@@ -149,13 +154,13 @@ function RecordingItem({ take, songTitle, playAlong, onDelete }: ItemProps) {
   useKnownDuration(audioRef)
   const url = useTakeUrl(take)
   const date = new Date(take.createdAt)
-  const stamp = date.toLocaleString('tr-TR', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
+  const stamp = date.toLocaleString(locale, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })
   const fileName = `${slug(songTitle) || 'loopster'}-${date.toISOString().slice(0, 16).replace(/[:T]/g, '-')}.${extensionFor(take.mimeType)}`
   const details = [
     formatClock(take.durationMs),
-    `%${Math.round(take.speed)}`,
+    t.common.percent(Math.round(take.speed)),
     take.bpm ? `${take.bpm} BPM` : null,
-    take.loopStart !== null && take.loopEnd !== null ? `Loop ${take.loopStart + 1}–${take.loopEnd + 1}` : null,
+    take.loopStart !== null && take.loopEnd !== null ? t.common.loopRange(take.loopStart + 1, take.loopEnd + 1) : null,
   ]
     .filter(Boolean)
     .join(' · ')
@@ -169,39 +174,39 @@ function RecordingItem({ take, songTitle, playAlong, onDelete }: ItemProps) {
       {url ? (
         <audio ref={audioRef} controls preload="metadata" src={url} className="h-10 w-full" />
       ) : (
-        <p className="text-sm text-muted">Ses dosyası okunuyor…</p>
+        <p className="text-sm text-muted">{t.recordings.readingAudio}</p>
       )}
       {take.sync ? (
         <Toggle
           on={playingAlong || preparing}
           onClick={() => playAlong.toggle(take)}
-          title="Kaydını, kayıt sırasındaki tab ayarlarıyla tab'ın sesiyle aynı anda çalar"
+          title={t.recordings.playAlongTitle}
           className="w-full"
         >
-          {playingAlong ? 'Birlikte dinlemeyi durdur' : preparing ? 'Hazırlanıyor…' : 'Tab ile birlikte dinle'}
+          {playingAlong ? t.recordings.stopPlayAlong : preparing ? t.recordings.preparing : t.recordings.playAlong}
         </Toggle>
       ) : (
-        <p className="text-xs text-muted">Tab çalmadan yapılmış; sadece tek başına dinlenebilir.</p>
+        <p className="text-xs text-muted">{t.recordings.standalone}</p>
       )}
       <div className="flex flex-wrap gap-2">
         {recordingsStore.onDisk ? (
-          <Button onClick={() => void recordingsStore.reveal(take)}>Klasörde göster</Button>
+          <Button onClick={() => void recordingsStore.reveal(take)}>{t.recordings.showInFolder}</Button>
         ) : (
           url && (
             <a href={url} download={fileName} className={linkButtonClass}>
-              İndir
+              {t.recordings.download}
             </a>
           )
         )}
         {confirming ? (
           <>
             <Button onClick={onDelete} className="border-danger text-danger">
-              Evet, sil
+              {t.recordings.confirmDelete}
             </Button>
-            <Button onClick={() => setConfirming(false)}>Vazgeç</Button>
+            <Button onClick={() => setConfirming(false)}>{t.common.cancel}</Button>
           </>
         ) : (
-          <Button onClick={() => setConfirming(true)}>Sil</Button>
+          <Button onClick={() => setConfirming(true)}>{t.common.delete}</Button>
         )}
       </div>
     </li>

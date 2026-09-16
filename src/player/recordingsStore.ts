@@ -35,7 +35,7 @@ const browserStore: RecordingsStore = {
     if (recording.blob) releaseUrl(recording.blob)
   },
   blobFor: async (recording) => {
-    if (!recording.blob) throw new Error('Kaydın sesi bulunamadı.')
+    if (!recording.blob) throw new Error('Take has no audio.')
     return recording.blob
   },
   reveal: async () => {},
@@ -66,7 +66,7 @@ const desktopStore: RecordingsStore = {
   folder: () => desktopApi()!.recordings.folder(),
   list: async (songId) => (await desktopApi()!.recordings.list(songId)).map(toRecording),
   add: async (recording, songTitle) => {
-    if (!recording.blob) throw new Error('Kaydedilecek ses yok.')
+    if (!recording.blob) throw new Error('Nothing to save: the take has no audio.')
     const saved = await desktopApi()!.recordings.save({
       id: recording.id,
       songId: recording.songId,
@@ -93,7 +93,7 @@ const desktopStore: RecordingsStore = {
   },
   blobFor: async (recording) => {
     if (recording.blob) return recording.blob
-    if (!recording.path) throw new Error('Kaydın dosyası bulunamadı.')
+    if (!recording.path) throw new Error('Take has no file path.')
     const cached = diskAudio.get(recording.path)
     if (cached) return cached
     const bytes = await desktopApi()!.recordings.read(recording.path)

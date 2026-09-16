@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import type { LibraryItem } from '../desktop/bridge'
+import { useI18n } from '../i18n'
 import type { Library } from '../player/useLibrary'
 import { FolderIcon } from './icons'
 import { Button } from './ui'
@@ -15,15 +16,19 @@ function titleOf(name: string): string {
 
 const NO_ITEMS: LibraryItem[] = []
 
+/** Case-insensitive match that honours both Turkish (İ/ı) and English (I/i) casing. */
+function matches(text: string, query: string): boolean {
+  return ['tr', 'en'].some((locale) => text.toLocaleLowerCase(locale).includes(query.toLocaleLowerCase(locale)))
+}
+
 export function LibrarySection({ library }: { library: Library }) {
+  const { t } = useI18n()
   const [query, setQuery] = useState('')
   const items = library.snapshot?.items ?? NO_ITEMS
 
   const groups = useMemo(() => {
-    const needle = query.trim().toLocaleLowerCase('tr')
-    const matching = needle
-      ? items.filter((item) => `${item.folder} ${item.name}`.toLocaleLowerCase('tr').includes(needle))
-      : items
+    const needle = query.trim()
+    const matching = needle ? items.filter((item) => matches(`${item.folder} ${item.name}`, needle)) : items
     const byFolder = new Map<string, LibraryItem[]>()
     for (const item of matching) {
       const list = byFolder.get(item.folder)
@@ -36,13 +41,10 @@ export function LibrarySection({ library }: { library: Library }) {
   if (!library.snapshot) {
     return (
       <div className="space-y-4 px-5 py-4">
-        <p className="text-sm text-muted">
-          Egzersiz dosyalarının durduğu klasörü seç. İçindeki tüm Guitar Pro dosyaları burada listelenir, tek tıkla
-          açarsın. Klasör hatırlanır, uygulamayı kapatıp açınca yine burada olur.
-        </p>
+        <p className="text-sm text-muted">{t.library.intro}</p>
         <Button onClick={() => void library.pick()} disabled={library.busy} className="w-full">
           <FolderIcon />
-          {library.busy ? 'Okunuyor…' : 'Klasör seç'}
+          {library.busy ? t.library.reading : t.library.pickFolder}
         </Button>
         {library.error && <p className="text-sm text-danger">{library.error}</p>}
       </div>
@@ -57,18 +59,18 @@ export function LibrarySection({ library }: { library: Library }) {
         </p>
         <div className="flex gap-2">
           <Button onClick={() => void library.refresh()} disabled={library.busy} className="flex-1">
-            {library.busy ? 'Okunuyor…' : 'Yenile'}
+            {library.busy ? t.library.reading : t.library.refresh}
           </Button>
           <Button onClick={() => void library.pick()} disabled={library.busy} className="flex-1">
-            Klasör değiştir
+            {t.library.changeFolder}
           </Button>
         </div>
         <input
           type="search"
           value={query}
           onChange={(e) => setQuery(e.target.value)}
-          placeholder="Parça ara"
-          aria-label="Kütüphanede ara"
+          placeholder={t.library.search}
+          aria-label={t.library.searchLabel}
           className="min-h-11 w-full rounded-lg border border-line bg-bg px-3 text-base text-ink placeholder:text-muted focus:border-accent/60 focus:outline-none"
         />
       </div>
@@ -76,9 +78,9 @@ export function LibrarySection({ library }: { library: Library }) {
       {library.error && <p className="text-sm text-danger">{library.error}</p>}
 
       {items.length === 0 ? (
-        <p className="text-sm text-muted">Bu klasörde Guitar Pro dosyası bulunamadı.</p>
+        <p className="text-sm text-muted">{t.library.noFiles}</p>
       ) : groups.length === 0 ? (
-        <p className="text-sm text-muted">"{query}" ile eşleşen parça yok.</p>
+        <p className="text-sm text-muted">{t.library.noMatch(query)}</p>
       ) : (
         <ul className="min-h-0 flex-1 space-y-4 overflow-auto">
           {groups.map(([folder, list]) => (
@@ -115,8 +117,8 @@ export function LibrarySection({ library }: { library: Library }) {
       )}
 
       <p className="text-xs text-muted">
-        {items.length} parça
-        {library.snapshot.truncated && ' (liste bu sayıda kesildi)'}
+        {t.library.count(items.length)}
+        {library.snapshot.truncated && t.library.truncated}
       </p>
     </div>
   )

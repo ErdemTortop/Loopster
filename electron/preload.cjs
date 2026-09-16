@@ -4,7 +4,7 @@ const { contextBridge, ipcRenderer } = require('electron')
 contextBridge.exposeInMainWorld('loopster', {
   desktop: true,
   library: {
-    pick: () => ipcRenderer.invoke('library:pick'),
+    pick: (dialogTitle) => ipcRenderer.invoke('library:pick', dialogTitle),
     restore: () => ipcRenderer.invoke('library:restore'),
     refresh: () => ipcRenderer.invoke('library:refresh'),
     forget: () => ipcRenderer.invoke('library:forget'),

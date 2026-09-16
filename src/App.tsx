@@ -12,6 +12,7 @@ import { SideDrawer, SideRail, type RailItem } from './components/SideRail'
 import { TransportBar } from './components/TransportBar'
 import { Button } from './components/ui'
 import { WelcomeScreen } from './components/WelcomeScreen'
+import { useI18n, type Lang, type Messages } from './i18n'
 import { useAlphaTab, type Player } from './player/useAlphaTab'
 import { useDesktopFile } from './player/useDesktopFile'
 import { useLibrary } from './player/useLibrary'
@@ -26,8 +27,14 @@ type LeftTool = 'notes' | 'library'
 type RightTool = 'pomodoro' | 'recordings'
 
 const recordingRed = '#ff8a7d'
+/** Each language is named in itself, so the switch reads right whichever language is active. */
+const LANGUAGES: { code: Lang; name: string }[] = [
+  { code: 'tr', name: 'Türkçe' },
+  { code: 'en', name: 'English' },
+]
 
 function App() {
+  const { t, lang, setLang } = useI18n()
   const [theme, setTheme] = useState<Theme>('dark')
   const [showHelp, setShowHelp] = useState(false)
   const [shelfOpen, setShelfOpen] = useState(false)
@@ -116,8 +123,8 @@ function App() {
       ? [
           {
             id: 'library',
-            label: 'Kütüphane',
-            title: 'Egzersiz klasöründeki parçalar',
+            label: t.rails.library,
+            title: t.rails.libraryTitle,
             icon: <FolderIcon className="size-6" />,
             active: leftTool === 'library',
             onClick: () => toggleLeftTool('library'),
@@ -130,8 +137,8 @@ function App() {
       : []),
     {
       id: 'notes',
-      label: 'Notlar',
-      title: 'Parça ve loop notları',
+      label: t.rails.notes,
+      title: t.rails.notesTitle,
       icon: <NoteIcon />,
       active: leftTool === 'notes',
       onClick: () => toggleLeftTool('notes'),
@@ -145,8 +152,8 @@ function App() {
   const rightItems: RailItem[] = [
     {
       id: 'pomodoro',
-      label: 'Pomodoro',
-      title: 'Pomodoro sayacı',
+      label: t.rails.pomodoro,
+      title: t.rails.pomodoroTitle,
       icon: <TimerIcon />,
       active: rightTool === 'pomodoro',
       onClick: () => toggleRightTool('pomodoro'),
@@ -162,8 +169,8 @@ function App() {
     },
     {
       id: 'recordings',
-      label: 'Kayıt',
-      title: 'Ses kayıtları',
+      label: t.rails.recordings,
+      title: t.rails.recordingsTitle,
       icon: <MicIcon />,
       active: rightTool === 'recordings',
       onClick: () => toggleRightTool('recordings'),
@@ -177,7 +184,7 @@ function App() {
     },
   ]
 
-  const noScoreHint = <p className="px-5 py-4 text-sm text-muted">Bir dosya açınca burada kullanabilirsin.</p>
+  const noScoreHint = <p className="px-5 py-4 text-sm text-muted">{t.rails.noScore}</p>
 
   return (
     <div className="flex h-svh flex-col bg-bg text-ink">
@@ -190,10 +197,10 @@ function App() {
         {hasScore && (
           <div className="min-w-0 flex-1 border-l border-line pl-3">
             <div className="truncate font-display text-lg leading-tight font-semibold tracking-wide">
-              {info.title || 'İsimsiz parça'}
+              {info.title || t.common.untitledSong}
             </div>
             <div className="truncate text-xs text-muted">
-              {[info.artist, `${info.barCount} ölçü`, `${Math.round(info.tempo)} BPM`].filter(Boolean).join(' · ')}
+              {[info.artist, t.header.bars(info.barCount), `${Math.round(info.tempo)} BPM`].filter(Boolean).join(' · ')}
             </div>
           </div>
         )}
@@ -201,28 +208,52 @@ function App() {
         <div className="ml-auto flex items-center gap-2">
           {hasScore && info.tracks.length > 1 && (
             <label className="hidden items-center gap-2 md:flex">
-              <span className="font-display text-xs font-semibold tracking-[0.18em] text-muted uppercase">Parça</span>
+              <span className="font-display text-xs font-semibold tracking-[0.18em] text-muted uppercase">
+                {t.header.track}
+              </span>
               <select
                 value={player.trackIndex}
                 onChange={(e) => player.selectTrack(Number(e.target.value))}
                 className="h-11 max-w-48 rounded-lg border border-line bg-raised px-2 text-sm"
               >
-                {info.tracks.map((t) => (
-                  <option key={t.index} value={t.index}>
-                    {t.index + 1}. {t.name || 'İsimsiz'}
+                {info.tracks.map((track) => (
+                  <option key={track.index} value={track.index}>
+                    {track.index + 1}. {track.name || t.common.untitledTrack}
                   </option>
                 ))}
               </select>
             </label>
           )}
           {hasScore && <FileDropZone onFile={openFile} compact />}
-          <Button onClick={() => setShowHelp(true)} aria-label="Klavye kısayolları" title="Klavye kısayolları (?)" className="w-11 px-0">
+          <div role="group" aria-label={t.language.label} className="flex overflow-hidden rounded-lg border border-line">
+            {LANGUAGES.map(({ code, name }) => (
+              <button
+                key={code}
+                type="button"
+                lang={code}
+                onClick={() => setLang(code)}
+                aria-pressed={lang === code}
+                title={name}
+                className={`h-11 w-10 font-display text-sm font-semibold tracking-wider uppercase transition-colors select-none ${
+                  lang === code ? 'bg-accent text-accent-ink' : 'bg-raised text-muted hover:text-ink'
+                }`}
+              >
+                {code}
+              </button>
+            ))}
+          </div>
+          <Button
+            onClick={() => setShowHelp(true)}
+            aria-label={t.header.shortcuts}
+            title={t.header.shortcutsTitle}
+            className="w-11 px-0"
+          >
             <KeyboardIcon />
           </Button>
           <Button
             onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
-            aria-label={theme === 'dark' ? 'Açık temaya geç' : 'Koyu temaya geç'}
-            title={theme === 'dark' ? 'Açık tema' : 'Koyu tema'}
+            aria-label={theme === 'dark' ? t.header.toLightTheme : t.header.toDarkTheme}
+            title={theme === 'dark' ? t.header.lightTheme : t.header.darkTheme}
             className="w-11 px-0"
           >
             {theme === 'dark' ? <SunIcon /> : <MoonIcon />}
@@ -232,7 +263,7 @@ function App() {
 
       {error && (
         <div role="alert" className="relative z-40 border-b border-danger/50 bg-danger/15 px-4 py-3 sm:px-5">
-          <strong className="font-display tracking-wide text-danger uppercase">Hata:</strong> {error}
+          <strong className="font-display tracking-wide text-danger uppercase">{t.banner.error}</strong> {error}
         </div>
       )}
       {recorder.error && (
@@ -241,10 +272,11 @@ function App() {
           className="relative z-40 flex flex-wrap items-center gap-3 border-b border-danger/50 bg-danger/15 px-4 py-2 sm:px-5"
         >
           <span>
-            <strong className="font-display tracking-wide text-danger uppercase">Kayıt:</strong> {recorder.error}
+            <strong className="font-display tracking-wide text-danger uppercase">{t.banner.recording}</strong>{' '}
+            {recorder.error}
           </span>
           <Button onClick={recorder.clearError} className="ml-auto">
-            Tamam
+            {t.common.ok}
           </Button>
         </div>
       )}
@@ -255,12 +287,13 @@ function App() {
           className="relative z-40 flex flex-wrap items-center gap-x-4 gap-y-2 border-b border-[#2f6b47] bg-[#12301f] px-4 py-2 text-[#c9f2d6] sm:px-5"
         >
           <span className="font-display text-lg font-semibold tracking-[0.16em] uppercase">
-            Mola{pomodoro.running ? '' : ' · durdu'}
+            {t.banner.breakTime}
+            {pomodoro.running ? '' : t.banner.breakPaused}
           </span>
           <span className="led led-break text-2xl font-semibold">{formatClock(pomodoro.remainingMs)}</span>
-          <span className="text-sm">Gitarı bırak, ellerini gevşet. Mola bitince zil çalar.</span>
+          <span className="text-sm">{t.banner.breakHint}</span>
           <Button onClick={pomodoro.reset} className="ml-auto">
-            Molayı atla
+            {t.banner.skipBreak}
           </Button>
         </div>
       )}
@@ -274,7 +307,7 @@ function App() {
           {status === 'loading' && (
             <div className="flex h-full items-center justify-center gap-3 font-display text-xl tracking-[0.14em] text-muted uppercase">
               <span aria-hidden="true" className="size-2.5 animate-pulse rounded-full bg-led" />
-              Dosya açılıyor…
+              {t.status.opening}
             </div>
           )}
           {/* Never display:none — alphaTab renders right after scoreLoaded and skips width=0 elements. */}
@@ -295,7 +328,7 @@ function App() {
         <SideDrawer
           side="left"
           open={leftTool !== null}
-          title={leftTool === 'library' ? 'Kütüphane' : 'Notlar'}
+          title={leftTool === 'library' ? t.rails.library : t.rails.notes}
           onClose={() => setLeftTool(null)}
         >
           {leftTool === 'library' ? (
@@ -310,7 +343,7 @@ function App() {
         <SideDrawer
           side="right"
           open={rightTool !== null}
-          title={rightTool === 'recordings' ? 'Kayıtlar' : 'Pomodoro'}
+          title={rightTool === 'recordings' ? t.rails.recordingsDrawer : t.rails.pomodoro}
           onClose={() => setRightTool(null)}
         >
           {rightTool === 'recordings' ? (
@@ -331,7 +364,7 @@ function App() {
         player={player}
         recorder={recorder}
         canPlay={canPlay}
-        statusMessage={statusText(player)}
+        statusMessage={statusText(player, t)}
         shelfOpen={shelfOpen}
         onToggleShelf={() => setShelfOpen((v) => !v)}
       />
@@ -341,12 +374,12 @@ function App() {
   )
 }
 
-function statusText(p: Player): string | null {
+function statusText(p: Player, t: Messages): string | null {
   if (p.status === 'idle') return null
-  if (p.status === 'loading') return 'Dosya açılıyor…'
-  if (p.status === 'rendering') return 'Nota çiziliyor…'
-  if (p.status === 'error') return 'Bir sorun oluştu.'
-  if (!p.playerReady) return `Ses yükleniyor… %${Math.round(p.soundFontProgress * 100)}`
+  if (p.status === 'loading') return t.status.opening
+  if (p.status === 'rendering') return t.status.rendering
+  if (p.status === 'error') return t.status.failed
+  if (!p.playerReady) return t.status.loadingSound(Math.round(p.soundFontProgress * 100))
   return null
 }
 

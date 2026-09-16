@@ -126,11 +126,25 @@ async function openLibrary(root) {
   return scan(root)
 }
 
-const RECORDINGS_FOLDER = 'Loopster Kayıtları'
+/**
+ * Takes are normal files in Documents, so they can be kept and backed up. The folder keeps its name once
+ * it exists, whatever language the app is switched to later; a first recording names it after the
+ * system language.
+ */
+const RECORDINGS_FOLDERS = { tr: 'Loopster Kayıtları', en: 'Loopster Recordings' }
 
-/** Documents/Loopster Kayıtları, created on first use. Takes are normal files the user can keep. */
 async function recordingsFolder() {
-  const dir = path.join(app.getPath('documents'), RECORDINGS_FOLDER)
+  const documents = app.getPath('documents')
+  for (const name of Object.values(RECORDINGS_FOLDERS)) {
+    const dir = path.join(documents, name)
+    try {
+      if ((await fs.stat(dir)).isDirectory()) return dir
+    } catch {
+      // Not there; try the next name.
+    }
+  }
+  const name = app.getLocale().toLowerCase().startsWith('tr') ? RECORDINGS_FOLDERS.tr : RECORDINGS_FOLDERS.en
+  const dir = path.join(documents, name)
   await fs.mkdir(dir, { recursive: true })
   return dir
 }
@@ -160,7 +174,7 @@ function timestamp(ms) {
 async function insideRecordings(filePath) {
   const dir = path.resolve(await recordingsFolder())
   const full = path.resolve(filePath)
-  if (!full.startsWith(dir + path.sep)) throw new Error('Dosya kayıt klasörünün dışında.')
+  if (!full.startsWith(dir + path.sep)) throw new Error('File is outside the recordings folder.')
   return full
 }
 
@@ -189,7 +203,7 @@ function registerRecordingIpc() {
   ipcMain.handle('recordings:save', async (_event, take) => {
     const dir = await recordingsFolder()
     const extension = extensionFor(take.mimeType)
-    const base = `${slug(take.title) || 'kayit'}-${timestamp(take.createdAt)}`
+    const base = `${slug(take.title) || 'loopster'}-${timestamp(take.createdAt)}`
     let name = base
     for (let i = 2; ; i += 1) {
       try {
@@ -247,9 +261,10 @@ function registerIpc(getWindow) {
     }
   })
 
-  ipcMain.handle('library:pick', async () => {
+  // The window passes the dialog title in its own language.
+  ipcMain.handle('library:pick', async (_event, dialogTitle) => {
     const result = await dialog.showOpenDialog(getWindow(), {
-      title: 'Egzersiz klasörünü seç',
+      title: typeof dialogTitle === 'string' && dialogTitle ? dialogTitle : 'Loopster',
       properties: ['openDirectory'],
     })
     if (result.canceled || result.filePaths.length === 0) return null
@@ -279,12 +294,12 @@ function registerIpc(getWindow) {
   })
 
   ipcMain.handle('library:read', async (_event, filePath) => {
-    if (typeof filePath !== 'string' || !libraryRoot) throw new Error('Kütüphane açık değil.')
+    if (typeof filePath !== 'string' || !libraryRoot) throw new Error('No library folder is open.')
     const full = path.resolve(filePath)
     const root = path.resolve(libraryRoot)
     // Only files inside the folder the user picked, so a stale path cannot read anything else.
-    if (full !== root && !full.startsWith(root + path.sep)) throw new Error('Dosya seçilen klasörün dışında.')
-    if (!SUPPORTED.has(path.extname(full).toLowerCase())) throw new Error('Desteklenmeyen dosya türü.')
+    if (full !== root && !full.startsWith(root + path.sep)) throw new Error('File is outside the library folder.')
+    if (!SUPPORTED.has(path.extname(full).toLowerCase())) throw new Error('Unsupported file type.')
     const data = await fs.readFile(full)
     return { name: path.basename(full), data: new Uint8Array(data) }
   })

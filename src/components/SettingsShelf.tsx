@@ -1,4 +1,5 @@
 import type { ReactNode } from 'react'
+import { useI18n } from '../i18n'
 import {
   CLICK_OFFSET_MAX,
   SPEED_MAX,
@@ -24,13 +25,14 @@ interface Props {
  * the notation width stays the same, so alphaTab does not re-layout.
  */
 export function SettingsShelf({ player, disabled, onClose }: Props) {
+  const { t } = useI18n()
   const { info, speed, metronome, loop, trainer, round, transpose, view } = player
 
   return (
-    <section id="settings-shelf" aria-label="Ayarlar" className="relative z-40 border-t border-line bg-surface">
+    <section id="settings-shelf" aria-label={t.settings.title} className="relative z-40 border-t border-line bg-surface">
       <div className="flex items-center justify-between gap-3 border-b border-line px-5 py-2">
-        <h2 className="font-display text-lg font-semibold tracking-[0.12em] uppercase">Ayarlar</h2>
-        <Button onClick={onClose}>Kapat</Button>
+        <h2 className="font-display text-lg font-semibold tracking-[0.12em] uppercase">{t.settings.title}</h2>
+        <Button onClick={onClose}>{t.common.close}</Button>
       </div>
 
       <fieldset
@@ -38,16 +40,16 @@ export function SettingsShelf({ player, disabled, onClose }: Props) {
         className="grid max-h-[40svh] min-w-0 grid-cols-1 gap-px overflow-y-auto bg-line sm:grid-cols-2 md:grid-cols-3 xl:grid-cols-6"
       >
         {disabled && (
-          <p className={`col-span-full bg-surface px-5 py-3 ${hintClass}`}>Ayarlar bir dosya açınca etkinleşir.</p>
+          <p className={`col-span-full bg-surface px-5 py-3 ${hintClass}`}>{t.settings.disabledHint}</p>
         )}
 
         <Cell>
-          <Section title="Tempo">
+          <Section title={t.settings.tempo}>
             <div className="flex items-center gap-3">
-              <Readout label="Hız" className="flex-1">
-                %{speed}
+              <Readout label={t.settings.speed} className="flex-1">
+                {t.common.percent(speed)}
               </Readout>
-              <Readout label="BPM" className="flex-1">
+              <Readout label={t.settings.bpm} className="flex-1">
                 {info ? Math.round((info.tempo * speed) / 100) : '—'}
               </Readout>
             </div>
@@ -58,13 +60,13 @@ export function SettingsShelf({ player, disabled, onClose }: Props) {
               step={1}
               value={speed}
               onChange={(e) => player.setSpeed(Number(e.target.value))}
-              aria-label="Hız yüzdesi"
+              aria-label={t.settings.speedSlider}
               className="h-11 w-full accent-accent"
             />
             <div className="grid grid-cols-3 gap-2">
               {[50, 75, 100].map((pct) => (
                 <Toggle key={pct} on={speed === pct} onClick={() => player.setSpeed(pct)}>
-                  %{pct}
+                  {t.common.percent(pct)}
                 </Toggle>
               ))}
             </div>
@@ -72,61 +74,65 @@ export function SettingsShelf({ player, disabled, onClose }: Props) {
         </Cell>
 
         <Cell>
-          <Section title="Metronom">
+          <Section title={t.settings.metronome}>
             <div className="grid grid-cols-2 gap-2">
               <Toggle on={metronome.enabled} onClick={player.toggleMetronome}>
-                Metronom
+                {t.settings.metronome}
               </Toggle>
               <Toggle
               on={player.countIn}
               onClick={() => player.setCountIn(!player.countIn)}
-              title="Çal'a basınca bir ölçü boyunca metronom sayar"
+              title={t.settings.countInTitle}
             >
-                Giriş sayımı
+                {t.settings.countIn}
               </Toggle>
             </div>
             <div className="grid grid-cols-2 gap-2">
               <Toggle
                 on={metronome.sound === 'tok'}
                 onClick={() => player.setMetronome({ sound: 'tok' })}
-                title="Güçlü, tahta blok benzeri tık"
+                title={t.settings.tokTitle}
               >
-                Tok
+                {t.settings.tok}
               </Toggle>
               <Toggle
                 on={metronome.sound === 'classic'}
                 onClick={() => player.setMetronome({ sound: 'classic' })}
-                title="alphaTab'ın kendi tık sesi (yükseltilmiş)"
+                title={t.settings.classicTitle}
               >
-                Klasik
+                {t.settings.classic}
               </Toggle>
             </div>
             <Toggle
               on={player.visualMetronome}
               onClick={() => player.setVisualMetronome(!player.visualMetronome)}
-              title="Alt çubukta her vuruşta yanıp sönen ışıklar; ses kapalıyken de çalışır"
+              title={t.settings.beatLightsTitle}
               className="w-full"
             >
-              Görsel vuruş
+              {t.settings.beatLights}
             </Toggle>
             <label className="flex items-center gap-3">
-              <span className="font-display text-xs font-semibold tracking-[0.14em] text-muted uppercase">Ses</span>
+              <span className="font-display text-xs font-semibold tracking-[0.14em] text-muted uppercase">
+                {t.settings.volume}
+              </span>
               <input
                 type="range"
                 min={0}
                 max={100}
                 value={Math.round(metronome.volume * 100)}
                 onChange={(e) => player.setMetronome({ volume: Number(e.target.value) / 100 })}
-                className="h-11 flex-1 accent-accent"
+                className="h-11 min-w-0 flex-1 accent-accent"
               />
               <span className="led w-10 text-right">{Math.round(metronome.volume * 100)}</span>
             </label>
             {metronome.sound === 'tok' && (
               <label
                 className="flex items-center gap-3"
-                title="Tık notadan önce ya da sonra duyuluyorsa buradan kaydır. Çift tıkla sıfırlanır."
+                title={t.settings.offsetTitle}
               >
-                <span className="font-display text-xs font-semibold tracking-[0.14em] text-muted uppercase">Kayma</span>
+                <span className="font-display text-xs font-semibold tracking-[0.14em] text-muted uppercase">
+                  {t.settings.offset}
+                </span>
                 <input
                   type="range"
                   min={-CLICK_OFFSET_MAX}
@@ -135,8 +141,8 @@ export function SettingsShelf({ player, disabled, onClose }: Props) {
                   value={metronome.offsetMs}
                   onChange={(e) => player.setMetronome({ offsetMs: Number(e.target.value) })}
                   onDoubleClick={() => player.setMetronome({ offsetMs: 0 })}
-                  aria-label="Tık kayması"
-                  className="h-11 flex-1 accent-accent"
+                  aria-label={t.settings.offsetSlider}
+                  className="h-11 min-w-0 flex-1 accent-accent"
                 />
                 <span className="led w-14 text-right">
                   {metronome.offsetMs > 0 ? '+' : ''}
@@ -148,23 +154,23 @@ export function SettingsShelf({ player, disabled, onClose }: Props) {
         </Cell>
 
         <Cell>
-          <Section title="Loop çalışması">
+          <Section title={t.settings.loopPractice}>
             <Toggle
               on={player.preRoll}
               onClick={() => player.setPreRoll(!player.preRoll)}
-              title="Loop baştan başlarken bir önceki ölçüden girer"
+              title={t.settings.preRollTitle}
               className="w-full"
             >
-              Hazırlık ölçüsü
+              {t.settings.preRoll}
             </Toggle>
             <Toggle on={trainer.enabled} onClick={() => player.setTrainer({ enabled: !trainer.enabled })} className="w-full">
-              Kademeli hızlanma
+              {t.settings.trainer}
             </Toggle>
             <div className="flex flex-wrap items-end gap-3">
-              <NumberField label="Her … turda" value={trainer.everyN} min={1} max={99} onCommit={(v) => player.setTrainer({ everyN: v })} />
-              <NumberField label="Artış %" value={trainer.stepPct} min={1} max={50} onCommit={(v) => player.setTrainer({ stepPct: v })} />
+              <NumberField label={t.settings.everyN} value={trainer.everyN} min={1} max={99} onCommit={(v) => player.setTrainer({ everyN: v })} />
+              <NumberField label={t.settings.stepPct} value={trainer.stepPct} min={1} max={50} onCommit={(v) => player.setTrainer({ stepPct: v })} />
               <NumberField
-                label="Hedef %"
+                label={t.settings.targetPct}
                 value={trainer.targetPct}
                 min={SPEED_MIN}
                 max={SPEED_MAX}
@@ -174,56 +180,56 @@ export function SettingsShelf({ player, disabled, onClose }: Props) {
             {trainer.enabled && (
               <p className={hintClass}>
                 {!loop.enabled
-                  ? 'Loop açıkken çalışır.'
+                  ? t.settings.trainerNeedsLoop
                   : speed >= trainer.targetPct
-                    ? `Tur ${round} · hedef hıza ulaşıldı.`
-                    : `Tur ${round} · sonraki artışa ${trainer.everyN - (round % trainer.everyN)} tur`}
+                    ? t.settings.trainerDone(round)
+                    : t.settings.trainerNext(round, trainer.everyN - (round % trainer.everyN))}
               </p>
             )}
           </Section>
         </Cell>
 
         <Cell>
-          <Section title="Görünüm">
+          <Section title={t.settings.view}>
             <div className="grid grid-cols-2 gap-2">
               <Toggle on={!view.tabOnly} onClick={() => player.setTabOnly(false)}>
-                Nota + Tab
+                {t.settings.notationAndTab}
               </Toggle>
               <Toggle on={view.tabOnly} onClick={() => player.setTabOnly(true)}>
-                Sadece tab
+                {t.settings.tabOnly}
               </Toggle>
             </div>
             <div className="flex items-center gap-2">
               <Button
                 onClick={() => player.changeZoom(-ZOOM_STEP)}
                 disabled={disabled || view.zoom <= ZOOM_MIN}
-                aria-label="Uzaklaştır"
+                aria-label={t.settings.zoomOut}
                 className="w-12 text-xl"
               >
                 −
               </Button>
-              <Readout label="Büyüklük" className="flex-1 text-center">
-                %{view.zoom}
+              <Readout label={t.settings.size} className="flex-1 text-center">
+                {t.common.percent(view.zoom)}
               </Readout>
               <Button
                 onClick={() => player.changeZoom(ZOOM_STEP)}
                 disabled={disabled || view.zoom >= ZOOM_MAX}
-                aria-label="Yakınlaştır"
+                aria-label={t.settings.zoomIn}
                 className="w-12 text-xl"
               >
                 +
               </Button>
             </div>
-            <p className={hintClass}>Tabı olmayan partiler (davul gibi) notayla gösterilmeye devam eder.</p>
+            <p className={hintClass}>{t.settings.viewHint}</p>
           </Section>
         </Cell>
 
         <Cell>
-          <Section title="Parçalar">
+          <Section title={t.settings.tracks}>
             {info && info.tracks.length > 0 ? (
               <ul className="space-y-3">
                 {info.tracks.map((track, i) => {
-                  const name = track.name || `Parça ${i + 1}`
+                  const name = track.name || t.common.trackN(i + 1)
                   const volume = Math.round((player.mix[i]?.volume ?? 1) * 100)
                   return (
                     <li key={track.index} className="space-y-1">
@@ -235,22 +241,22 @@ export function SettingsShelf({ player, disabled, onClose }: Props) {
                           on={player.mix[i]?.mute ?? false}
                           tone="red"
                           onClick={() => player.toggleMute(i)}
-                          title="Sustur"
+                          title={t.settings.muteTitle}
                           className="px-2 text-sm"
                         >
-                          Sus
+                          {t.settings.mute}
                         </Toggle>
                         <Toggle
                           on={player.mix[i]?.solo ?? false}
                           onClick={() => player.toggleSolo(i)}
-                          title="Solo"
+                          title={t.settings.solo}
                           className="px-2 text-sm"
                         >
-                          Solo
+                          {t.settings.solo}
                         </Toggle>
                       </div>
-                      <label className="flex items-center gap-2" title="Çift tıkla: %100">
-                        <span className="sr-only">{name} ses seviyesi</span>
+                      <label className="flex items-center gap-2" title={t.settings.trackVolumeTitle}>
+                        <span className="sr-only">{t.settings.trackVolume(name)}</span>
                         <input
                           type="range"
                           min={0}
@@ -261,38 +267,38 @@ export function SettingsShelf({ player, disabled, onClose }: Props) {
                           onDoubleClick={() => player.setTrackVolume(i, 1)}
                           className="h-8 min-w-0 flex-1 accent-accent"
                         />
-                        <span className="led w-12 text-right text-sm">%{volume}</span>
+                        <span className="led w-12 text-right text-sm">{t.common.percent(volume)}</span>
                       </label>
                     </li>
                   )
                 })}
               </ul>
             ) : (
-              <p className={hintClass}>Dosya açınca parçalar burada listelenir.</p>
+              <p className={hintClass}>{t.settings.noTracks}</p>
             )}
           </Section>
         </Cell>
 
         <Cell>
-          <Section title="Transpoze">
+          <Section title={t.settings.transpose}>
             <div className="flex items-center gap-2">
-              <Button onClick={() => player.changeTranspose(-1)} aria-label="Yarım ses aşağı" className="w-12 text-xl">
+              <Button onClick={() => player.changeTranspose(-1)} aria-label={t.settings.semitoneDown} className="w-12 text-xl">
                 −
               </Button>
-              <Readout label="Yarım ses" className="flex-1 text-center">
+              <Readout label={t.settings.semitones} className="flex-1 text-center">
                 {transpose === 0 ? '0' : `${transpose > 0 ? '+' : ''}${transpose}`}
               </Readout>
-              <Button onClick={() => player.changeTranspose(1)} aria-label="Yarım ses yukarı" className="w-12 text-xl">
+              <Button onClick={() => player.changeTranspose(1)} aria-label={t.settings.semitoneUp} className="w-12 text-xl">
                 +
               </Button>
             </div>
             <Button
               onClick={() => player.setTranspose(0)}
               disabled={disabled || transpose === 0}
-              title="Sadece ses kayar, tab aynı kalır"
+              title={t.settings.transposeResetTitle}
               className="w-full"
             >
-              Sıfırla
+              {t.common.reset}
             </Button>
           </Section>
         </Cell>
