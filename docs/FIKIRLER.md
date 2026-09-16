@@ -24,6 +24,7 @@ Durumlar: **bekliyor** · **planlandı (Faz N)** · **yapıldı** · **vazgeçil
 | Parça başına loop ve tempo hafızası | yapıldı | Brief'teki Faz 4 kalıcılık maddesi; dosya parmak izine göre saklanır |
 | Kayıtları diske yazma (masaüstü) | yapıldı | Belgeler/Loopster Kayıtları klasörüne ses + .json; Klasörde göster, silme çöp kutusuna |
 | Çift tıkla dosya açma (masaüstü) | yapıldı | Kurulumda .gp/.gp3/.gp4/.gp5/.gpx Loopster'a bağlanır; uygulama açıksa dosya mevcut pencerede açılır |
+| İngilizce dil desteği | yapıldı | Arayüz Türkçe/İngilizce; sistem diline göre açılır, üst çubuktaki TR/EN ile değişir. İngilizce ana README + README.tr.md |
 | Uygulama olarak kurma (PWA) | vazgeçildi | Masaüstü uygulamasına geçildi; tarayıcı sürümü tek seferlik deneme olarak kalıyor |
 | Ses kaydetme ve kaydı dinleme | yapıldı | Mikrofonla kayıt; parça bazında liste, dinle / sil / indir; tarayıcıda saklanır |
 

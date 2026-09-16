@@ -15,7 +15,9 @@
   <a href="https://erdemtortop.github.io/Loopster/"><b>Tarayıcıda dene</b></a>
 </p>
 
-![Loopster: 3–6. ölçüler loop'ta, %75 tempoda çalışılan bir egzersiz](docs/screenshot.png)
+<p align="center"><b>Türkçe</b> · <a href="README.md">English</a></p>
+
+![Loopster: 3–6. ölçüler loop'ta, %75 tempoda çalışılan bir egzersiz](docs/screenshot-tr.png)
 
 ## Kurulum
 
@@ -36,6 +38,9 @@ yazılması yalnızca masaüstü uygulamasında var.
 4. Zor bölümün ölçülerinin üzerinden fareyle sürükle: loop zarfı oluşur, çalma o aralıkta döner.
 
 İlk çalmada ses dosyası (SoundFont, ~1,3 MB) yüklenir; alt çubukta ilerlemesi görünür.
+
+Arayüz Türkçe ve İngilizce. Loopster sistem dilinde açılır; üst çubuktaki **TR / EN** düğmesiyle değiştirirsin,
+seçimin hatırlanır.
 
 Ekran düzeni: solda **Kütüphane** (masaüstü) ve **Notlar**, sağda **Pomodoro** ve **Kayıt**; tıklayınca o kenardan
 panel açılır. Tempo, metronom, kademeli hızlanma, parçalar ve transpoze alt çubuktaki **Ayarlar** (P) rafında.
@@ -78,8 +83,9 @@ Parça hafızası ve notlar dosyanın içeriğine göre saklanır; dosyanın ad�
   klasörlerine göre gruplanmış olarak listelenir; tek tıkla açılır, arama kutusu vardır. Klasör hatırlanır.
 - **Çift tıkla açma:** Guitar Pro dosyasına çift tıklayınca Loopster'da açılır; uygulama zaten açıksa yeni pencere
   açmadan mevcut pencerede.
-- **Kayıtlar dosya olarak:** kayıtlar `Belgeler/Loopster Kayıtları` klasörüne normal ses dosyası olarak yazılır
-  (yanında tempo, loop ve zamanlama bilgisini tutan bir `.json` ile). "Klasörde göster" ile dosyaya gidersin,
+- **Kayıtlar dosya olarak:** kayıtlar Belgeler altındaki `Loopster Kayıtları` klasörüne (Türkçe olmayan sistemlerde
+  `Loopster Recordings`) normal ses dosyası olarak yazılır; yanında tempo, loop ve zamanlama bilgisini tutan bir `.json`
+  durur. Klasörün adı sonradan arayüz dili değişse de aynı kalır. "Klasörde göster" ile dosyaya gidersin,
   silinenler geri dönüşüm kutusuna gider. Tarayıcı sürümünde kayıtlar tarayıcıda tutulur.
 
 ### Klavye kısayolları
@@ -131,6 +137,9 @@ npm run lint
 npm run build
 ```
 
+Arayüz metinleri `src/i18n/` içinde: `tr.ts` tüm anahtarları tanımlar, `en.ts` aynılarını vermek zorundadır; eksik
+bir çeviri tip denetiminde hata verir.
+
 ## Yayın
 
 - `main` dalına yapılan her gönderimde tarayıcı sürümü GitHub Pages'e yayınlanır
@@ -140,8 +149,8 @@ npm run build
   ([release.yml](.github/workflows/release.yml)); etiket ile `package.json` sürümü uyuşmazsa iş durur.
 
 ```bash
-git tag v1.0.1
-git push origin v1.0.1
+git tag v1.1.1
+git push origin v1.1.1
 ```
 
 Çalışma notları: [proje talimatı](docs/PROJE_BRIEF.md) ve [fikir listesi](docs/FIKIRLER.md).

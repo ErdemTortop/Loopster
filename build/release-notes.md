@@ -1,23 +1,30 @@
-Loopster: Guitar Pro dosyaları için tab çalar ve pratik aracı.
+**Loopster 1.1.0 speaks English.** The whole interface is now available in English and Turkish. Loopster opens in
+your system language, and the **TR / EN** buttons in the top bar switch it at any time; your choice is remembered.
 
-1.0.1, 1.0.0'ın indirme sorununu düzeltir: o sürümün sayfasında kurulum dosyası yerine otomatik güncelleme için
-üretilen yardımcı dosyalar görünüyordu. Uygulamanın kendisi aynı.
+## Installation
 
-## Kurulum
+Download `Loopster-Setup.exe` below and run it. The installer is not code-signed, so Windows SmartScreen may warn
+you: choose **More info → Run anyway**. The installer associates Guitar Pro files with Loopster.
 
-Aşağıdaki `Loopster-Setup.exe` dosyasını indirip çalıştır. Kurulum dosyası imzalı olmadığı için Windows SmartScreen uyarı
-gösterebilir: **Daha fazla bilgi → Yine de çalıştır**. Kurulum Guitar Pro dosyalarını Loopster'a bağlar.
+## What's in it
 
-## Neler var
+- Open Guitar Pro files (`.gp`, `.gp3`, `.gp4`, `.gp5`, `.gpx`), see notation and tab, play them back
+- A loop envelope over the notation, 25%–150% tempo, a speed trainer, a lead-in bar and a "Too hard" button
+- Punchy and classic metronome, count-in, beat lights
+- Mute, solo and volume per track; transpose; tab-only view and zoom
+- Tempo and loop remembered per song; notes for songs and loop ranges
+- Microphone recording, and playing a take back together with the tab
+- Pomodoro timer
+- Desktop only: exercise folder library, double-click to open, takes saved as files in Documents
 
-- Guitar Pro dosyalarını (`.gp`, `.gp3`, `.gp4`, `.gp5`, `.gpx`) açma, nota ve tab gösterimi, çalma
-- Notanın üzerinde loop zarfı, %25–%150 tempo, kademeli hızlanma, hazırlık ölçüsü ve "Zorlandım" düğmesi
-- Tok ve klasik metronom, giriş sayımı, görsel vuruş
-- Parça bazında susturma, solo ve ses seviyesi; transpoze; sadece tab görünümü ve yakınlaştırma
-- Her parçanın tempo ve loop hafızası; parçaya ve loop aralıklarına bağlı notlar
-- Mikrofonla kayıt ve kaydı tab ile birlikte dinleme
-- Pomodoro sayacı
-- Yalnızca masaüstünde: egzersiz klasörü kütüphanesi, çift tıkla dosya açma ve kayıtların
-  `Belgeler/Loopster Kayıtları` klasörüne dosya olarak yazılması
+Try it without installing: https://erdemtortop.github.io/Loopster/
 
-Kurmadan denemek için tarayıcı sürümü: https://erdemtortop.github.io/Loopster/
+---
+
+**Loopster 1.1.0 artık İngilizce de.** Arayüzün tamamı Türkçe ve İngilizce. Loopster sistem dilinde açılır; üst
+çubuktaki **TR / EN** düğmeleriyle istediğin an değiştirirsin, seçimin hatırlanır.
+
+Aşağıdaki `Loopster-Setup.exe` dosyasını indirip çalıştır. Kurulum dosyası imzalı olmadığı için Windows SmartScreen
+uyarı gösterebilir: **Daha fazla bilgi → Yine de çalıştır**. Kurulum Guitar Pro dosyalarını Loopster'a bağlar.
+
+Mevcut kayıtların yeri değişmez: Belgeler altındaki `Loopster Kayıtları` klasörü kullanılmaya devam eder.

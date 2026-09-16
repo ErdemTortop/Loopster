@@ -1,8 +1,8 @@
 {
   "name": "loopster",
   "private": true,
-  "version": "1.0.1",
-  "description": "Guitar Pro dosyaları için tab çalar ve pratik aracı",
+  "version": "1.1.0",
+  "description": "Tab player and practice tool for Guitar Pro files",
   "author": "ErdemTortop",
   "license": "MIT",
   "homepage": "https://github.com/ErdemTortop/Loopster",
