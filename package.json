@@ -1,7 +1,7 @@
 {
   "name": "loopster",
   "private": true,
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Guitar Pro dosyaları için tab çalar ve pratik aracı",
   "author": "ErdemTortop",
   "license": "MIT",
@@ -27,10 +27,7 @@
   "build": {
     "appId": "dev.loopster.app",
     "productName": "Loopster",
-    "artifactName": "Loopster-Setup-${version}.${ext}",
-    "releaseInfo": {
-      "releaseNotesFile": "build/release-notes.md"
-    },
+    "artifactName": "Loopster-Setup.${ext}",
     "directories": {
       "output": "release"
     },
@@ -61,16 +58,10 @@
     },
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "differentialPackage": false
     },
-    "publish": [
-      {
-        "provider": "github",
-        "owner": "ErdemTortop",
-        "repo": "Loopster",
-        "releaseType": "release"
-      }
-    ]
+    "publish": null
   },
   "dependencies": {
     "@coderline/alphatab": "^1.8.4",

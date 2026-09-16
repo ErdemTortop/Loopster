@@ -1,8 +1,11 @@
-Loopster'ın ilk sürümü: Guitar Pro dosyaları için tab çalar ve pratik aracı.
+Loopster: Guitar Pro dosyaları için tab çalar ve pratik aracı.
+
+1.0.1, 1.0.0'ın indirme sorununu düzeltir: o sürümün sayfasında kurulum dosyası yerine otomatik güncelleme için
+üretilen yardımcı dosyalar görünüyordu. Uygulamanın kendisi aynı.
 
 ## Kurulum
 
-`Loopster-Setup-1.0.0.exe` dosyasını indirip çalıştır. Kurulum dosyası imzalı olmadığı için Windows SmartScreen uyarı
+Aşağıdaki `Loopster-Setup.exe` dosyasını indirip çalıştır. Kurulum dosyası imzalı olmadığı için Windows SmartScreen uyarı
 gösterebilir: **Daha fazla bilgi → Yine de çalıştır**. Kurulum Guitar Pro dosyalarını Loopster'a bağlar.
 
 ## Neler var

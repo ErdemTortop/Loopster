@@ -1,5 +1,8 @@
 # Builds the Windows installer. A pushed version tag (v1.2.3) publishes it as a GitHub release;
 # a manual run only builds it and keeps the installer as a workflow artifact.
+#
+# electron-builder only builds here. Letting it publish created the release twice when several
+# files were uploaded at once, so the release is made in one step with the installer as its only file.
 name: Desktop release
 
 on:
@@ -35,13 +38,26 @@ jobs:
       - run: npm run build
 
       - name: Build the installer
-        shell: bash
-        run: npx electron-builder --win --publish ${{ startsWith(github.ref, 'refs/tags/') && 'always' || 'never' }}
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: npx electron-builder --win --publish never
 
       - uses: actions/upload-artifact@v7
         with:
           name: Loopster-Setup
-          path: release/*.exe
+          path: release/Loopster-Setup.exe
           if-no-files-found: error
+
+      - name: Publish the release
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if gh release view "$GITHUB_REF_NAME" > /dev/null 2>&1; then
+            gh release upload "$GITHUB_REF_NAME" release/Loopster-Setup.exe --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" release/Loopster-Setup.exe \
+              --title "Loopster $version" \
+              --notes-file build/release-notes.md \
+              --verify-tag
+          fi

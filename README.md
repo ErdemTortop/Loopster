@@ -10,7 +10,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/ErdemTortop/Loopster/releases/latest"><b>Windows için indir</b></a>
+  <a href="https://github.com/ErdemTortop/Loopster/releases/latest/download/Loopster-Setup.exe"><b>Windows için indir</b></a>
   &nbsp;·&nbsp;
   <a href="https://erdemtortop.github.io/Loopster/"><b>Tarayıcıda dene</b></a>
 </p>
@@ -19,7 +19,9 @@
 
 ## Kurulum
 
-1. [Sürümler](https://github.com/ErdemTortop/Loopster/releases/latest) sayfasından `Loopster-Setup-<sürüm>.exe` dosyasını indir ve çalıştır.
+1. [Loopster-Setup.exe](https://github.com/ErdemTortop/Loopster/releases/latest/download/Loopster-Setup.exe) dosyasını
+   indir ve çalıştır. Bağlantı her zaman en son sürümü indirir; önceki sürümler ve değişiklikler
+   [Sürümler](https://github.com/ErdemTortop/Loopster/releases) sayfasında.
 2. Kurulum dosyası imzalı olmadığı için Windows SmartScreen uyarı gösterebilir: **Daha fazla bilgi → Yine de çalıştır**.
 3. Kurulum `.gp`, `.gp3`, `.gp4`, `.gp5` ve `.gpx` dosyalarını Loopster'a bağlar; dosyaya çift tıklamak yeterli.
 
