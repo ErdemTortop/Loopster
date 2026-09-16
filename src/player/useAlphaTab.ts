@@ -59,10 +59,23 @@ export const TRACK_VOLUME_MAX = 1.5
  * click on the music rather than a few milliseconds behind it.
  */
 const EVENT_LAG_SEC = 0.007
-/** Above this error the predicted grid is abandoned and re-anchored (seek, loop jump, tempo change). */
-const CLICK_RESYNC_SEC = 0.02
+/**
+ * Share of a beat the measured time may differ from the predicted grid before the grid is abandoned
+ * and re-anchored. Event delivery swings widely on its own — at half speed a loop wrap arrived
+ * 200 ms off a 1200 ms beat while the audio stayed even — so the grid rides those out, and only a
+ * real jump such as a seek re-anchors it.
+ */
+const CLICK_RESYNC_RATIO = 0.25
+const CLICK_RESYNC_MIN_SEC = 0.08
+const CLICK_RESYNC_MAX_SEC = 0.3
 /** How much each event pulls the grid towards the measured time; the rest keeps the click steady. */
 const CLICK_GRID_BLEND = 0.2
+/**
+ * Two clicks closer than this are heard as one stumbling beat rather than two. A seek makes alphaTab
+ * deliver a couple of metronome events in quick succession, so a click that would land this soon
+ * after the previous one is dropped.
+ */
+const CLICK_MIN_GAP_SEC = 0.15
 
 /** Bar bounds relative to the alphaTab container, one entry per bar. */
 export interface BarRect {
@@ -92,6 +105,7 @@ export interface ViewState {
 export interface BeatEvent {
   /** Zero-based position within the bar. */
   index: number
+  /** Real time until the next beat, i.e. the score's beat length adjusted for the playback speed. */
   durationMs: number
   /** Song tick of the click (count-in clicks use their own timeline). */
   tick: number
@@ -290,6 +304,10 @@ export function useAlphaTab(
   const beatListenersRef = useRef(new Set<(beat: BeatEvent) => void>())
   /** Click grid: when the next beat is due on the audio clock, and what that click should sound like. */
   const clickGridRef = useRef<{ at: number; durationSec: number; index: number } | null>(null)
+  /** When the most recent click was handed to the audio graph; may still be in the future. */
+  const clickPlannedRef = useRef(0)
+  /** When a click was last actually heard, used to keep two from landing on top of each other. */
+  const clickSoundedRef = useRef(0)
   const wrapListenersRef = useRef(new Set<(round: number) => void>())
   // Metronome events still to come from the count-in bar of the current start.
   const countInLeftRef = useRef(0)
@@ -452,9 +470,13 @@ export function useAlphaTab(
           const click = event as alphaTab.midi.AlphaTabMetronomeEvent
           const inCountIn = countInLeftRef.current > 0
           if (inCountIn) countInLeftRef.current -= 1
+          // alphaTab reports the beat length in score time, without the playback speed: at 50 % the
+          // beats really arrive 1200 ms apart while the event still says 600. Everything here works
+          // in wall-clock time, so scale it.
+          const speedFactor = Math.max(SPEED_MIN, latest.current.speed) / 100
           const beat: BeatEvent = {
             index: click.metronomeNumerator,
-            durationMs: click.metronomeDurationInMilliseconds,
+            durationMs: click.metronomeDurationInMilliseconds / speedFactor,
             tick: click.tick,
             countIn: inCountIn,
             speed: latest.current.speed,
@@ -472,17 +494,30 @@ export function useAlphaTab(
               const grid = clickGridRef.current
               // Delivery jitters by a few ms, so follow the predicted grid and drift towards the
               // measured time instead of jumping to every event.
+              const tolerance = clamp(durationSec * CLICK_RESYNC_RATIO, CLICK_RESYNC_MIN_SEC, CLICK_RESYNC_MAX_SEC)
               const onGrid =
                 grid !== null &&
-                Math.abs(grid.at - heardAt) < CLICK_RESYNC_SEC &&
+                Math.abs(grid.at - heardAt) < tolerance &&
                 Math.abs(grid.durationSec - durationSec) < 0.002
               // The grid stays on the music; the listener's own adjustment is added when playing.
               const offsetSec = metronome.offsetMs / 1000
+              // Anything planned for a time that has passed has been heard by now.
+              if (clickPlannedRef.current <= now && clickPlannedRef.current > clickSoundedRef.current) {
+                clickSoundedRef.current = clickPlannedRef.current
+              }
               if (!onGrid) {
-                // First beat after a start, seek or tempo change: this one can only be late, and a
-                // click scheduled from the old grid would be in the wrong place.
+                // Re-anchoring after a start, seek or tempo change. A click already placed on this
+                // beat is dropped while it is still in the future, and a click that would land on
+                // top of one just heard is skipped: a seek delivers events in bursts.
+                const pending = grid !== null && clickPlannedRef.current > now
                 cancelClicks()
-                playClick(metronome.volume, beat.index === 0, offsetSec > 0 ? now + offsetSec : undefined)
+                const tooSoon = now - clickSoundedRef.current < Math.min(CLICK_MIN_GAP_SEC, durationSec / 2)
+                if ((grid === null || pending) && !tooSoon) {
+                  const at = now + Math.max(0, offsetSec)
+                  playClick(metronome.volume, beat.index === 0, offsetSec > 0 ? at : undefined)
+                  clickPlannedRef.current = at
+                  clickSoundedRef.current = at
+                }
               }
               const thisBeatAt = onGrid ? grid.at + (heardAt - grid.at) * CLICK_GRID_BLEND : heardAt
               const beatsPerBar = api.score?.masterBars[currentBarRef.current]?.timeSignatureNumerator ?? 4
@@ -493,6 +528,7 @@ export function useAlphaTab(
               // With the count-in on but the metronome off, counting stops when the song starts.
               if (metronome.enabled || countInLeftRef.current > 0) {
                 playClick(metronome.volume, nextIndex === 0, nextAt + offsetSec)
+                clickPlannedRef.current = nextAt + offsetSec
               }
             }
           }
