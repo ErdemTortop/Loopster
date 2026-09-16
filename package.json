@@ -28,6 +28,9 @@
     "appId": "dev.loopster.app",
     "productName": "Loopster",
     "artifactName": "Loopster-Setup-${version}.${ext}",
+    "releaseInfo": {
+      "releaseNotesFile": "build/release-notes.md"
+    },
     "directories": {
       "output": "release"
     },
