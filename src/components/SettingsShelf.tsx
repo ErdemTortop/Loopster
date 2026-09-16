@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react'
 import {
+  CLICK_OFFSET_MAX,
   SPEED_MAX,
   SPEED_MIN,
   TRACK_VOLUME_MAX,
@@ -120,6 +121,29 @@ export function SettingsShelf({ player, disabled, onClose }: Props) {
               />
               <span className="led w-10 text-right">{Math.round(metronome.volume * 100)}</span>
             </label>
+            {metronome.sound === 'tok' && (
+              <label
+                className="flex items-center gap-3"
+                title="Tık notadan önce ya da sonra duyuluyorsa buradan kaydır. Çift tıkla sıfırlanır."
+              >
+                <span className="font-display text-xs font-semibold tracking-[0.14em] text-muted uppercase">Kayma</span>
+                <input
+                  type="range"
+                  min={-CLICK_OFFSET_MAX}
+                  max={CLICK_OFFSET_MAX}
+                  step={1}
+                  value={metronome.offsetMs}
+                  onChange={(e) => player.setMetronome({ offsetMs: Number(e.target.value) })}
+                  onDoubleClick={() => player.setMetronome({ offsetMs: 0 })}
+                  aria-label="Tık kayması"
+                  className="h-11 flex-1 accent-accent"
+                />
+                <span className="led w-14 text-right">
+                  {metronome.offsetMs > 0 ? '+' : ''}
+                  {metronome.offsetMs} ms
+                </span>
+              </label>
+            )}
           </Section>
         </Cell>
 

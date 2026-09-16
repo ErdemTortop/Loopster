@@ -23,6 +23,8 @@ Tempo, metronom, kademeli hızlanma, loop, parçalar ve transpoze alt çubuktaki
 - **Görsel metronom:** alt çubukta her vuruşta yanıp sönen ışıklar (ölçünün ilk vuruşu daha parlak). Metronom sesi
   kapalıyken de çalışır; Ayarlar'daki "Görsel vuruş" ile açılıp kapanır.
 - **Metronom** ve ses seviyesi. İki ses: **Tok** (güçlü, tahta blok benzeri; varsayılan) ve **Klasik** (alphaTab'ın kendi tıkı). **Giriş sayımı** açıksa Çal'a basınca bir ölçü sayar.
+  Tok sesinde bir de **Kayma** ayarı var (±30 ms): tık sana notadan önce ya da sonra geliyorsa buradan hizalarsın,
+  çift tıklayınca sıfırlanır. Normalde gerekmez; ses kartına göre değişen küçük farklar içindir.
 - **Loop zarfı:** Guitar Pro'daki gibi notanın üzerinde bir kutu, tam ölçü sınırlarında döner. Fareyle ölçülerin
   üzerinden sürükleyerek oluştur, kenarlarındaki tutamaçları çekerek genişlet ya da daralt (tablette parmakla da).
   Bir ölçüye tıklamak imleci oraya götürür.

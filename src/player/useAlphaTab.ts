@@ -31,6 +31,8 @@ export interface MetronomeState {
   enabled: boolean
   volume: number
   sound: MetronomeSound
+  /** Fine adjustment for the tok click: positive plays it later, negative earlier. */
+  offsetMs: number
 }
 
 export interface TrainerConfig {
@@ -134,6 +136,9 @@ function loadPreRoll(): boolean {
 }
 
 const METRONOME_SOUND_KEY = 'loopster.metronomeSound'
+const CLICK_OFFSET_KEY = 'loopster.clickOffset'
+/** Range of the click offset slider in milliseconds; enough to cover a different sound card. */
+export const CLICK_OFFSET_MAX = 30
 /** alphaTab's click sample is quiet, so the classic sound gets a gain boost. */
 const CLASSIC_BOOST = 2
 /** A count-in volume of 0 disables the count-in entirely, so the "tok" sound keeps it on but inaudible. */
@@ -144,6 +149,15 @@ function loadMetronomeSound(): MetronomeSound {
     return localStorage.getItem(METRONOME_SOUND_KEY) === 'classic' ? 'classic' : 'tok'
   } catch {
     return 'tok'
+  }
+}
+
+function loadClickOffset(): number {
+  try {
+    const stored = Number(localStorage.getItem(CLICK_OFFSET_KEY))
+    return Number.isFinite(stored) ? clamp(Math.round(stored), -CLICK_OFFSET_MAX, CLICK_OFFSET_MAX) : 0
+  } catch {
+    return 0
   }
 }
 
@@ -217,6 +231,7 @@ export function useAlphaTab(
     enabled: false,
     volume: 0.6,
     sound: loadMetronomeSound(),
+    offsetMs: loadClickOffset(),
   }))
   const [countIn, setCountIn] = useState(false)
   const [loop, setLoop] = useState<LoopState>(NO_LOOP)
@@ -414,11 +429,13 @@ export function useAlphaTab(
                 grid !== null &&
                 Math.abs(grid.at - heardAt) < CLICK_RESYNC_SEC &&
                 Math.abs(grid.durationSec - durationSec) < 0.002
+              // The grid stays on the music; the listener's own adjustment is added when playing.
+              const offsetSec = metronome.offsetMs / 1000
               if (!onGrid) {
                 // First beat after a start, seek or tempo change: this one can only be late, and a
                 // click scheduled from the old grid would be in the wrong place.
                 cancelClicks()
-                playClick(metronome.volume, beat.index === 0)
+                playClick(metronome.volume, beat.index === 0, offsetSec > 0 ? now + offsetSec : undefined)
               }
               const thisBeatAt = onGrid ? grid.at + (heardAt - grid.at) * CLICK_GRID_BLEND : heardAt
               const beatsPerBar = api.score?.masterBars[currentBarRef.current]?.timeSignatureNumerator ?? 4
@@ -428,7 +445,7 @@ export function useAlphaTab(
               // The click for the next beat is scheduled now, a whole beat ahead, so it lands on it.
               // With the count-in on but the metronome off, counting stops when the song starts.
               if (metronome.enabled || countInLeftRef.current > 0) {
-                playClick(metronome.volume, nextIndex === 0, nextAt)
+                playClick(metronome.volume, nextIndex === 0, nextAt + offsetSec)
               }
             }
           }
@@ -475,10 +492,11 @@ export function useAlphaTab(
   useEffect(() => {
     try {
       localStorage.setItem(METRONOME_SOUND_KEY, metronome.sound)
+      localStorage.setItem(CLICK_OFFSET_KEY, String(metronome.offsetMs))
     } catch {
       // Not remembered; fine.
     }
-  }, [metronome.sound])
+  }, [metronome.sound, metronome.offsetMs])
 
   useEffect(() => {
     const api = apiRef.current
