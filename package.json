@@ -1,7 +1,18 @@
 {
   "name": "loopster",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "Guitar Pro dosyaları için tab çalar ve pratik aracı",
+  "author": "ErdemTortop",
+  "license": "MIT",
+  "homepage": "https://github.com/ErdemTortop/Loopster",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/ErdemTortop/Loopster.git"
+  },
+  "bugs": {
+    "url": "https://github.com/ErdemTortop/Loopster/issues"
+  },
   "type": "module",
   "main": "electron/main.cjs",
   "scripts": {
@@ -16,18 +27,47 @@
   "build": {
     "appId": "dev.loopster.app",
     "productName": "Loopster",
-    "directories": { "output": "release" },
-    "files": ["dist/**", "electron/**", "package.json"],
+    "artifactName": "Loopster-Setup-${version}.${ext}",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/**",
+      "electron/**",
+      "package.json"
+    ],
     "fileAssociations": [
       {
-        "ext": ["gp", "gp3", "gp4", "gp5", "gpx"],
+        "ext": [
+          "gp",
+          "gp3",
+          "gp4",
+          "gp5",
+          "gpx"
+        ],
         "name": "Guitar Pro tab",
         "description": "Guitar Pro tab dosyasi",
         "role": "Viewer"
       }
     ],
-    "win": { "target": ["nsis"] },
-    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true }
+    "win": {
+      "target": [
+        "nsis"
+      ],
+      "icon": "build/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "publish": [
+      {
+        "provider": "github",
+        "owner": "ErdemTortop",
+        "repo": "Loopster",
+        "releaseType": "release"
+      }
+    ]
   },
   "dependencies": {
     "@coderline/alphatab": "^1.8.4",
@@ -49,5 +89,8 @@
     "tailwindcss": "^4.3.3",
     "typescript": "~6.0.2",
     "vite": "^8.3.0"
+  },
+  "allowScripts": {
+    "electron-winstaller": false
   }
 }
