@@ -1,6 +1,6 @@
 import * as alphaTab from '@coderline/alphatab'
 import { useCallback, useEffect, useRef, useState, type RefObject } from 'react'
-import { playClick, unlockClick } from './clickSound'
+import { cancelClicks, clickTime, playClick, setClickContext, unlockClick } from './clickSound'
 
 type Score = alphaTab.model.Score
 type Track = alphaTab.model.Track
@@ -48,6 +48,19 @@ export interface TrackMix {
 }
 
 export const TRACK_VOLUME_MAX = 1.5
+
+/**
+ * A metronome event reaches us this long after that beat has already left alphaTab's audio graph.
+ * Measured by recording alphaTab's own sample-accurate click next to the event arrivals.
+ * Because the beat is already gone by then, its click cannot be placed on it any more: each event
+ * instead schedules the click for the *next* beat, one beat ahead, which is what keeps the tok
+ * click on the music rather than a few milliseconds behind it.
+ */
+const EVENT_LAG_SEC = 0.007
+/** Above this error the predicted grid is abandoned and re-anchored (seek, loop jump, tempo change). */
+const CLICK_RESYNC_SEC = 0.02
+/** How much each event pulls the grid towards the measured time; the rest keeps the click steady. */
+const CLICK_GRID_BLEND = 0.2
 
 /** Bar bounds relative to the alphaTab container, one entry per bar. */
 export interface BarRect {
@@ -222,6 +235,8 @@ export function useAlphaTab(
   const [preRoll, setPreRollState] = useState(loadPreRoll)
   // Beats go straight to subscribers (the beat light) instead of React state, to avoid re-rendering on every click.
   const beatListenersRef = useRef(new Set<(beat: BeatEvent) => void>())
+  /** Click grid: when the next beat is due on the audio clock, and what that click should sound like. */
+  const clickGridRef = useRef<{ at: number; durationSec: number; index: number } | null>(null)
   const wrapListenersRef = useRef(new Set<(round: number) => void>())
   // Metronome events still to come from the count-in bar of the current start.
   const countInLeftRef = useRef(0)
@@ -313,7 +328,12 @@ export function useAlphaTab(
       api.soundFontLoad.on((e) => {
         if (e.total > 0) setSoundFontProgress(e.loaded / e.total)
       }),
-      api.playerReady.on(() => setPlayerReady(true)),
+      api.playerReady.on(() => {
+        setPlayerReady(true)
+        // Play our click on alphaTab's own clock: same output device, same latency, one timeline.
+        const output = (api.player as unknown as { output?: { context?: AudioContext | null } } | null)?.output
+        setClickContext(output?.context ?? null)
+      }),
       // Not midiLoaded: in alphaTab 1.8.4 subscribing to it recurses forever in worker mode
       // (its fire-on-register getter calls itself). midiLoad fires once the tick cache exists.
       api.midiLoad.on(() => {
@@ -334,6 +354,11 @@ export function useAlphaTab(
             : 0
         } else if (!playing) {
           countInLeftRef.current = 0
+        }
+        if (!playing) {
+          // Clicks are scheduled ahead of the music; without this one would sound after a pause.
+          cancelClicks()
+          clickGridRef.current = null
         }
         if (e.stopped) {
           roundRef.current = 0
@@ -374,7 +399,39 @@ export function useAlphaTab(
             round: roundRef.current,
           }
           const { metronome } = latest.current
-          if (metronome.sound === 'tok' && (metronome.enabled || inCountIn)) playClick(metronome.volume, beat.index === 0)
+          if (metronome.sound === 'tok' && (metronome.enabled || inCountIn)) {
+            const now = clickTime()
+            const durationSec = beat.durationMs / 1000
+            if (now === null) {
+              playClick(metronome.volume, beat.index === 0)
+            } else {
+              // When this beat was heard. The event itself always arrives a little after that.
+              const heardAt = now - EVENT_LAG_SEC
+              const grid = clickGridRef.current
+              // Delivery jitters by a few ms, so follow the predicted grid and drift towards the
+              // measured time instead of jumping to every event.
+              const onGrid =
+                grid !== null &&
+                Math.abs(grid.at - heardAt) < CLICK_RESYNC_SEC &&
+                Math.abs(grid.durationSec - durationSec) < 0.002
+              if (!onGrid) {
+                // First beat after a start, seek or tempo change: this one can only be late, and a
+                // click scheduled from the old grid would be in the wrong place.
+                cancelClicks()
+                playClick(metronome.volume, beat.index === 0)
+              }
+              const thisBeatAt = onGrid ? grid.at + (heardAt - grid.at) * CLICK_GRID_BLEND : heardAt
+              const beatsPerBar = api.score?.masterBars[currentBarRef.current]?.timeSignatureNumerator ?? 4
+              const nextIndex = (beat.index + 1) % Math.max(1, beatsPerBar)
+              const nextAt = thisBeatAt + durationSec
+              clickGridRef.current = { at: nextAt, durationSec, index: nextIndex }
+              // The click for the next beat is scheduled now, a whole beat ahead, so it lands on it.
+              // With the count-in on but the metronome off, counting stops when the song starts.
+              if (metronome.enabled || countInLeftRef.current > 0) {
+                playClick(metronome.volume, nextIndex === 0, nextAt)
+              }
+            }
+          }
           beatListenersRef.current.forEach((listener) => listener(beat))
         }
       }),
@@ -403,6 +460,8 @@ export function useAlphaTab(
     if (api) {
       api.metronomeVolume = metronome.enabled && metronome.sound === 'classic' ? metronome.volume * CLASSIC_BOOST : 0
     }
+    // A tok click is already scheduled a beat ahead; turning the metronome off must silence it too.
+    if (!metronome.enabled || metronome.sound !== 'tok') cancelClicks()
   }, [metronome, apiEpoch, playerReady])
 
   useEffect(() => {
