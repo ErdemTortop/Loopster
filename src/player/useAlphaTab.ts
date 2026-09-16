@@ -161,6 +161,40 @@ function loadClickOffset(): number {
   }
 }
 
+/** Per-song practice settings, keyed by the song fingerprint like notes and recordings are. */
+const SONG_SETTINGS_PREFIX = 'loopster.song.'
+
+interface SongSettings {
+  speed: number
+  loop: { start: number; end: number } | null
+}
+
+function loadSongSettings(songId: string): SongSettings | null {
+  try {
+    const raw = localStorage.getItem(SONG_SETTINGS_PREFIX + songId)
+    if (!raw) return null
+    const parsed = JSON.parse(raw) as Partial<SongSettings>
+    const loop = parsed.loop
+    return {
+      speed: typeof parsed.speed === 'number' ? clamp(Math.round(parsed.speed), SPEED_MIN, SPEED_MAX) : 100,
+      loop:
+        loop && Number.isInteger(loop.start) && Number.isInteger(loop.end) && loop.start >= 0 && loop.end >= loop.start
+          ? { start: loop.start, end: loop.end }
+          : null,
+    }
+  } catch {
+    return null
+  }
+}
+
+function saveSongSettings(songId: string, settings: SongSettings): void {
+  try {
+    localStorage.setItem(SONG_SETTINGS_PREFIX + songId, JSON.stringify(settings))
+  } catch {
+    // Not remembered; fine.
+  }
+}
+
 const VISUAL_METRONOME_KEY = 'loopster.visualMetronome'
 
 function loadVisualMetronome(): boolean {
@@ -245,6 +279,10 @@ export function useAlphaTab(
   const [mix, setMix] = useState<TrackMix[]>([])
   const [transpose, setTransposeState] = useState(0)
   const [songId, setSongId] = useState<string | null>(null)
+  /** Fingerprint of the song being loaded, known before its score arrives. */
+  const pendingSongRef = useRef<string | null>(null)
+  /** The song whose remembered tempo and loop have been applied; also gates saving them back. */
+  const restoredSongRef = useRef<string | null>(null)
   const [view, setView] = useState<ViewState>(loadView)
   const [visualMetronome, setVisualMetronomeState] = useState(loadVisualMetronome)
   const [preRoll, setPreRollState] = useState(loadPreRoll)
@@ -327,8 +365,17 @@ export function useAlphaTab(
         })
         setTrackIndex(0)
         setMix(score.tracks.map(() => ({ mute: false, solo: false, volume: 1 })))
-        setLoop(NO_LOOP)
-        loopSetRef.current = false
+
+        // Bring back the tempo and loop this song was last practised with. A song that has never
+        // been practised starts clean instead of inheriting the previous song's tempo, and a loop
+        // reaching past the end belongs to a different version of the file, so it is dropped.
+        const pendingSong = pendingSongRef.current
+        const saved = pendingSong ? loadSongSettings(pendingSong) : null
+        restoredSongRef.current = pendingSong
+        setSpeedState(saved?.speed ?? 100)
+        const savedLoop = saved?.loop && saved.loop.end < score.masterBars.length ? saved.loop : null
+        setLoop(savedLoop ? { enabled: true, start: savedLoop.start, end: savedLoop.end } : NO_LOOP)
+        loopSetRef.current = savedLoop !== null
         roundRef.current = 0
         setRound(0)
         currentBarRef.current = 0
@@ -498,6 +545,15 @@ export function useAlphaTab(
     }
   }, [metronome.sound, metronome.offsetMs])
 
+  // Store the tempo and loop again as they change, once this song's own settings are in place.
+  useEffect(() => {
+    if (!songId || restoredSongRef.current !== songId) return
+    const timer = window.setTimeout(() => {
+      saveSongSettings(songId, { speed, loop: loop.enabled ? { start: loop.start, end: loop.end } : null })
+    }, 500)
+    return () => window.clearTimeout(timer)
+  }, [songId, speed, loop])
+
   useEffect(() => {
     const api = apiRef.current
     const score = api?.score
@@ -661,7 +717,10 @@ export function useAlphaTab(
     try {
       const data = new Uint8Array(await file.arrayBuffer())
       // Per-song data (notes) is keyed by file content, so a renamed copy keeps it.
-      setSongId(await fingerprint(data))
+      const id = await fingerprint(data)
+      // scoreLoaded restores this song's tempo and loop and needs the id before the score arrives.
+      pendingSongRef.current = id
+      setSongId(id)
       if (!api.load(data, [0])) {
         setSongId(null)
         setError(`"${file.name}" açılamadı. Dosya biçimi tanınmadı.`)

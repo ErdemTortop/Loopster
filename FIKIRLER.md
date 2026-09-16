@@ -21,6 +21,7 @@ Durumlar: **bekliyor** · **planlandı (Faz N)** · **yapıldı** · **vazgeçil
 | Kaydı tab ile birlikte dinleme | yapıldı | Tab çalarken yapılan kayıtlar; tempo, loop ve hız değişimleri tekrarlanır; Kayıt ↔ Tab dengesi ve gecikme kaydırma |
 | Masaüstü uygulaması (Electron) | yapıldı | Aynı koddan masaüstü kabuğu; mikrofon izni kalıcı, pencere kendi başına |
 | Egzersiz klasörü kütüphanesi | yapıldı | Masaüstünde bir klasör seç, içindeki tüm tab dosyaları listeden tek tıkla açılır; klasör hatırlanır |
+| Parça başına loop ve tempo hafızası | yapıldı | Brief'teki Faz 4 kalıcılık maddesi; dosya parmak izine göre saklanır |
 | Kayıtları diske yazma (masaüstü) | yapıldı | Belgeler/Loopster Kayıtları klasörüne ses + .json; Klasörde göster, silme çöp kutusuna |
 | Çift tıkla dosya açma (masaüstü) | yapıldı | Kurulumda .gp/.gp3/.gp4/.gp5/.gpx Loopster'a bağlanır; uygulama açıksa dosya mevcut pencerede açılır |
 | Uygulama olarak kurma (PWA) | vazgeçildi | Masaüstü uygulamasına geçildi; tarayıcı sürümü tek seferlik deneme olarak kalıyor |

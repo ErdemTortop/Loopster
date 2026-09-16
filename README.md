@@ -40,6 +40,9 @@ Tempo, metronom, kademeli hızlanma, loop, parçalar ve transpoze alt çubuktaki
 - **Egzersiz klasörü (sadece masaüstü):** bir klasör seçersin, içindeki tüm Guitar Pro dosyaları sol raftaki
   **Kütüphane** panelinde alt klasörlerine göre gruplanmış olarak listelenir; tek tıkla açılır, arama kutusu vardır.
   Seçtiğin klasör hatırlanır, uygulamayı kapatıp açınca yine oradadır.
+- **Parça hafızası:** her parça kendi temposunu ve loop'unu hatırlar. Dosyayı tekrar açtığında kaldığın hızda ve
+  aynı loop'la gelir; hiç çalışılmamış bir parça %100 ve loop'suz başlar. Notlar gibi dosya içeriğine göre saklanır,
+  dosyanın adı değişse de kaybolmaz.
 - **Notlar:** her parça için genel bir not ve loop aralıklarına bağlı notlar (ör. "33–40: 3. parmak kayıyor").
   Bir loop notuna tıklayınca o loop açılır. Notlar tarayıcıda, dosya içeriğine göre saklanır; dosyanın adı değişse de kaybolmaz.
 - **Ses kaydı:** mikrofonla kendi çalışını kaydet (kırmızı düğme ya da R). Kayıtlar parça bazında tarih, tempo ve loop
